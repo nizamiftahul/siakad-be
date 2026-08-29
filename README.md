@@ -23,7 +23,8 @@ src/main/java/com/siakad/
 ├── <fitur>/                   # mis. guru/, siswa/, kelas/ — controller, service,
 │                               # repository, entity, dan DTO untuk fitur tsb dikelompokkan di sini
 └── common/
-    └── exception/              # error handling lintas-fitur (Problem Details)
+    ├── exception/              # error handling lintas-fitur (GlobalExceptionHandler)
+    └── response/               # envelope response standar (ApiResponse, Meta, Pagination, FieldError)
 
 src/main/resources/
 ├── application.yml            # konfigurasi aplikasi
@@ -95,3 +96,74 @@ di-restore dari `docker/initdb/01-schema.sql`, yang otomatis dijalankan Postgres
 
 Belum ada endpoint REST aktif — akan ditambahkan per fitur mengikuti struktur package-by-feature
 di atas.
+
+---
+
+## Struktur Response Standar
+
+Seluruh endpoint REST wajib mengembalikan `ResponseEntity<ApiResponse<T>>` dari
+`com.siakad.common.response.ApiResponse`, bukan entity/DTO mentah, supaya bentuk response konsisten
+di semua endpoint.
+
+**Sukses:**
+
+```json
+{
+  "success": true,
+  "message": "Data berhasil diambil",
+  "data": { "id": 1, "name": "Item A" },
+  "meta": { "timestamp": "2026-08-29T10:00:00Z" }
+}
+```
+
+**Sukses dengan pagination** (list data), memakai `Pagination.from(Page<?>)`:
+
+```json
+{
+  "success": true,
+  "message": "Data berhasil diambil",
+  "data": [{ "id": 1 }, { "id": 2 }],
+  "meta": { "timestamp": "2026-08-29T10:00:00Z" },
+  "pagination": {
+    "page": 1,
+    "size": 10,
+    "totalElements": 97,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrevious": false
+  }
+}
+```
+
+> `page` bersifat 1-based ke arah client, sedangkan `Page` milik Spring Data 0-based — konversi
+> hanya dilakukan di `Pagination.from(...)`. Controller yang menerima `page` dari client wajib
+> mengurangi 1 sebelum membangun `PageRequest.of(page - 1, size)`.
+
+**Error** — dibangun otomatis oleh `GlobalExceptionHandler` (`com.siakad.common.exception`), controller
+tidak perlu menanganinya manual:
+
+```json
+{
+  "success": false,
+  "message": "Validasi gagal",
+  "errors": [{ "field": "email", "message": "Format email tidak valid" }],
+  "meta": {
+    "timestamp": "2026-08-29T10:00:00Z",
+    "path": "/api/users",
+    "traceId": "abc-123"
+  }
+}
+```
+
+Status HTTP yang dipetakan: 404 (`ResourceNotFoundException`), 400 (`MethodArgumentNotValidException`,
+`ConstraintViolationException`), 500 (fallback generik — pesan error tidak pernah bocor ke client,
+detail asli dicatat di log server bersama `traceId`).
+
+**Contoh penggunaan di controller:**
+
+```java
+return ResponseEntity.ok(ApiResponse.success("Data berhasil diambil", dto));
+return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Data berhasil dibuat", created));
+return ResponseEntity.noContent().build(); // 204 tidak boleh punya body — jangan dibungkus ApiResponse
+return ResponseEntity.ok(ApiResponse.paginatedSuccess("Data berhasil diambil", page.getContent(), Pagination.from(page)));
+```
