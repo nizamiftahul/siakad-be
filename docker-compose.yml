@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: siakad-postgres
+    environment:
+      POSTGRES_DB: siakad
+      POSTGRES_USER: siakad
+      POSTGRES_PASSWORD: siakad
+    ports:
+      - "5432:5432"
+    volumes:
+      - siakad_pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siakad -d siakad"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  siakad_pgdata:
