@@ -12,11 +12,10 @@ import com.siakad.siswa.repository.SiswaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.OffsetDateTime;
 
 @Service
 @Transactional
@@ -26,11 +25,13 @@ public class SiswaService {
     private final SiswaRepository siswaRepository;
 
     public SiswaResponse create(SiswaRequest request) {
-        if (siswaRepository.existsByNisAndJenjang(request.nis(), request.jenjang())) {
+        Jenjang jenjang = currentJenjang();
+        if (siswaRepository.existsByNisAndJenjang(request.nis(), jenjang)) {
             throw new DuplicateResourceException("NIS sudah terdaftar pada jenjang tersebut");
         }
         String actor = currentUsername();
         SiswaEntity entity = toEntity(request, new SiswaEntity());
+        entity.setJenjang(jenjang);
         entity.setStatus(request.status() != null ? request.status() : SiswaStatus.Aktif);
         entity.setCreatedBy(actor);
         entity.setUpdatedBy(actor);
@@ -43,18 +44,19 @@ public class SiswaService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SiswaResponse> list(String nama, String nis, SiswaStatus status, Jenjang jenjang,
-            Pageable pageable) {
-        return siswaRepository.search(nama, nis, status, jenjang, pageable)
+    public Page<SiswaResponse> list(String nama, String nis, SiswaStatus status, Pageable pageable) {
+        return siswaRepository.search(nama, nis, status, currentJenjang(), pageable)
                 .map(SiswaResponse::from);
     }
 
     public SiswaResponse update(Integer id, SiswaRequest request) {
         SiswaEntity entity = findOrThrow(id);
-        if (siswaRepository.existsByNisAndJenjangAndIdNot(request.nis(), request.jenjang(), id)) {
+        Jenjang jenjang = entity.getJenjang();
+        if (siswaRepository.existsByNisAndJenjangAndIdNot(request.nis(), jenjang, id)) {
             throw new DuplicateResourceException("NIS sudah terdaftar pada jenjang tersebut");
         }
         toEntity(request, entity);
+        entity.setJenjang(jenjang);
         if (request.status() == null) {
             entity.setStatus(SiswaStatus.Aktif);
         }
@@ -68,7 +70,7 @@ public class SiswaService {
     }
 
     private SiswaEntity findOrThrow(Integer id) {
-        return siswaRepository.findById(id)
+        return siswaRepository.findByIdAndJenjang(id, currentJenjang())
                 .orElseThrow(() -> new ResourceNotFoundException("Siswa dengan id " + id + " tidak ditemukan"));
     }
 
@@ -100,8 +102,6 @@ public class SiswaService {
         entity.setAlamatWali(r.alamatWali());
         entity.setPendidikanWali(r.pendidikanWali());
         entity.setGajiWali(r.gajiWali());
-        entity.setJenjang(r.jenjang());
-        entity.setIsAlumni(r.isAlumni());
         return entity;
     }
 
@@ -111,5 +111,17 @@ public class SiswaService {
             return "system";
         }
         return principal.getUsername();
+    }
+
+    private Jenjang currentJenjang() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
+            throw new AccessDeniedException("Akses ditolak: sesi tidak valid");
+        }
+        Jenjang jenjang = principal.getJenjang();
+        if (jenjang == null) {
+            throw new AccessDeniedException("Akun tidak memiliki jenjang");
+        }
+        return jenjang;
     }
 }

@@ -29,82 +29,81 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SiswaControllerTest {
 
-    @Mock private SiswaService siswaService;
+    @Mock
+    private SiswaService siswaService;
 
-    @InjectMocks private SiswaController controller;
+    @InjectMocks
+    private SiswaController controller;
 
     private SiswaRequest request() {
         return new SiswaRequest(
-                null,           // description
-                null,           // nisn
-                "Budi",         // nama
-                null,           // email
-                null,           // jenisKelamin
-                null,           // alamat
-                null,           // telepon
-                null,           // status
-                null,           // asalSekolah
-                null,           // namaAyah
-                null,           // pekerjaanAyah
-                null,           // alamatAyah
-                null,           // pendidikanAyah
-                null,           // gajiAyah
-                null,           // namaIbu
-                null,           // pekerjaanIbu
-                null,           // alamatIbu
-                null,           // pendidikanIbu
-                null,           // gajiIbu
-                null,           // tglLahir
-                "NIS001",       // nis
-                null,           // tmptLahir
-                null,           // domisili
-                null,           // namaWali
-                null,           // pekerjaanWali
-                null,           // alamatWali
-                null,           // pendidikanWali
-                null,           // gajiWali
-                Jenjang.SD,     // jenjang
-                null            // isAlumni
+                null, // description
+                null, // nisn
+                "Budi", // nama
+                null, // email
+                null, // jenisKelamin
+                null, // alamat
+                null, // telepon
+                null, // status
+                null, // asalSekolah
+                null, // namaAyah
+                null, // pekerjaanAyah
+                null, // alamatAyah
+                null, // pendidikanAyah
+                null, // gajiAyah
+                null, // namaIbu
+                null, // pekerjaanIbu
+                null, // alamatIbu
+                null, // pendidikanIbu
+                null, // gajiIbu
+                null, // tglLahir
+                "NIS001", // nis
+                null, // tmptLahir
+                null, // domisili
+                null, // namaWali
+                null, // pekerjaanWali
+                null, // alamatWali
+                null, // pendidikanWali
+                null // gajiWali
         );
     }
 
     private SiswaResponse response() {
         return new SiswaResponse(
-                1,                      // id
-                OffsetDateTime.now(),   // createdAt
-                null,                   // updatedAt
-                null,                   // description
-                null,                   // nisn
-                "Budi",                 // nama
-                null,                   // email
-                null,                   // jenisKelamin
-                null,                   // alamat
-                null,                   // telepon
-                SiswaStatus.Aktif,      // status
-                null,                   // asalSekolah
-                null,                   // namaAyah
-                null,                   // pekerjaanAyah
-                null,                   // alamatAyah
-                null,                   // pendidikanAyah
-                null,                   // gajiAyah
-                null,                   // namaIbu
-                null,                   // pekerjaanIbu
-                null,                   // alamatIbu
-                null,                   // pendidikanIbu
-                null,                   // gajiIbu
-                null,                   // tglLahir
-                "NIS001",               // nis
-                null,                   // tmptLahir
-                null,                   // domisili
-                null,                   // namaWali
-                null,                   // pekerjaanWali
-                null,                   // alamatWali
-                null,                   // pendidikanWali
-                null,                   // gajiWali
-                Jenjang.SD,             // jenjang
-                "admin",                // createdBy
-                "admin",                // updatedBy
-                null                    // isAlumni
+                1, // id
+                OffsetDateTime.now(), // createdAt
+                null, // updatedAt
+                null, // description
+                null, // nisn
+                "Budi", // nama
+                null, // email
+                null, // jenisKelamin
+                null, // alamat
+                null, // telepon
+                SiswaStatus.Aktif, // status
+                null, // asalSekolah
+                null, // namaAyah
+                null, // pekerjaanAyah
+                null, // alamatAyah
+                null, // pendidikanAyah
+                null, // gajiAyah
+                null, // namaIbu
+                null, // pekerjaanIbu
+                null, // alamatIbu
+                null, // pendidikanIbu
+                null, // gajiIbu
+                null, // tglLahir
+                "NIS001", // nis
+                null, // tmptLahir
+                null, // domisili
+                null, // namaWali
+                null, // pekerjaanWali
+                null, // alamatWali
+                null, // pendidikanWali
+                null, // gajiWali
+                Jenjang.SD, // jenjang
+                "admin", // createdBy
+                "admin" // updatedBy
         );
     }
 
@@ -133,14 +132,23 @@ class SiswaControllerTest {
     @Test
     void listReturnsPaginatedEnvelope() {
         var page = new PageImpl<>(List.of(response()), PageRequest.of(0, 10), 1);
-        when(siswaService.list(any(), any(), any(), any(), any())).thenReturn(page);
+        when(siswaService.list(any(), any(), any(), any())).thenReturn(page);
 
-        ResponseEntity<ApiResponse<List<SiswaResponse>>> response =
-                controller.list(1, 10, null, null, null, null);
+        ResponseEntity<ApiResponse<List<SiswaResponse>>> response = controller.list(1, 10, null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getData()).hasSize(1);
         assertThat(response.getBody().getPagination().page()).isEqualTo(1);
+    }
+
+    @Test
+    void listRejectsDeprecatedJenjangParam() {
+        ResponseEntity<ApiResponse<List<SiswaResponse>>> response = controller.list(1, 10, null, null, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().isSuccess()).isFalse();
+        assertThat(response.getBody().getMessage())
+                .isEqualTo("Param jenjang tidak lagi didukung; hasil dibatasi jenjang akun");
     }
 
     @Test

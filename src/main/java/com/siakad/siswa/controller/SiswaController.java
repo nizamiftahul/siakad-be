@@ -1,6 +1,5 @@
 package com.siakad.siswa.controller;
 
-import com.siakad.common.enums.Jenjang;
 import com.siakad.common.enums.SiswaStatus;
 import com.siakad.common.response.ApiResponse;
 import com.siakad.common.response.Pagination;
@@ -59,9 +58,8 @@ public class SiswaController {
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "size minimal 1") @Max(value = 100, message = "size maksimal 100") int size,
             @RequestParam(required = false) String nama,
             @RequestParam(required = false) String nis,
-            @RequestParam(required = false) SiswaStatus status,
-            @RequestParam(required = false) Jenjang jenjang) {
-        Page<SiswaResponse> result = siswaService.list(nama, nis, status, jenjang,
+            @RequestParam(required = false) SiswaStatus status) {
+        Page<SiswaResponse> result = siswaService.list(nama, nis, status,
                 PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "id")));
         return ResponseEntity.ok(ApiResponse.paginatedSuccess(
                 "Berhasil", result.getContent(), Pagination.from(result)));

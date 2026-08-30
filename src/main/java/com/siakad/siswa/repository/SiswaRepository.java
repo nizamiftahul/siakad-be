@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
 
     @Query("""
@@ -27,4 +29,6 @@ public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
     boolean existsByNisAndJenjang(String nis, Jenjang jenjang);
 
     boolean existsByNisAndJenjangAndIdNot(String nis, Jenjang jenjang, Integer id);
+
+    Optional<SiswaEntity> findByIdAndJenjang(Integer id, Jenjang jenjang);
 }
