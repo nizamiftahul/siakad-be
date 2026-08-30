@@ -16,15 +16,20 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 /**
- * Pemetaan JPA ke tabel legacy {@code "Siswa"}. Kolom {@code hashedPassword} sengaja tidak
- * dipetakan karena tidak dipakai oleh fitur CRUD ini (reserved untuk login siswa di masa depan).
+ * Pemetaan JPA ke tabel legacy {@code "Siswa"}. Kolom {@code hashedPassword}
+ * sengaja tidak
+ * dipetakan karena tidak dipakai oleh fitur CRUD ini (reserved untuk login
+ * siswa di masa depan).
  */
 @Entity
 @Table(name = "\"Siswa\"")
@@ -39,9 +44,11 @@ public class SiswaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @CreationTimestamp
     @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(name = "\"updatedAt\"")
     private OffsetDateTime updatedAt;
 

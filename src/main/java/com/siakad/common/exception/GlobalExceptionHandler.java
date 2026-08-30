@@ -5,8 +5,7 @@ import com.siakad.common.response.FieldError;
 import com.siakad.common.response.Meta;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +13,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
@@ -22,10 +22,9 @@ import java.util.List;
  * {@link ApiResponse} standar ({@code success/message/errors/meta}), bukan RFC-9457
  * Problem Details.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(ResourceNotFoundException ex,
@@ -57,6 +56,15 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Validasi gagal", errors, meta));
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
+                                                                HttpServletRequest request) {
+        Meta meta = Meta.of(request.getRequestURI(), TraceIdUtil.newTraceId());
+        String message = "Nilai parameter '" + ex.getName() + "' tidak valid: " + ex.getValue();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(message, null, meta));
+    }
+
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ApiResponse<Void>> handleDuplicate(DuplicateResourceException ex,
                                                                HttpServletRequest request) {
@@ -67,10 +75,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex,
-                                                                            HttpServletRequest request) {
+                                                                           HttpServletRequest request) {
         Meta meta = Meta.of(request.getRequestURI(), TraceIdUtil.newTraceId());
+        log.error("Data integrity violation pada {} (traceId={})", request.getRequestURI(), meta.traceId(), ex);
+
+        String message = "Data tidak bisa diproses karena masih direferensikan data lain";
+        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve) {
+            String constraint = cve.getConstraintName();
+            if (constraint != null && constraint.contains("nis_jenjang")) {
+                message = "NIS sudah terdaftar pada jenjang tersebut";
+            }
+        }
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("Data tidak bisa diproses karena masih direferensikan data lain", null, meta));
+                .body(ApiResponse.error(message, null, meta));
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)

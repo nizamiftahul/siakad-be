@@ -32,7 +32,6 @@ public class SiswaService {
         String actor = currentUsername();
         SiswaEntity entity = toEntity(request, new SiswaEntity());
         entity.setStatus(request.status() != null ? request.status() : SiswaStatus.Aktif);
-        entity.setCreatedAt(OffsetDateTime.now());
         entity.setCreatedBy(actor);
         entity.setUpdatedBy(actor);
         return SiswaResponse.from(siswaRepository.save(entity));
@@ -45,7 +44,7 @@ public class SiswaService {
 
     @Transactional(readOnly = true)
     public Page<SiswaResponse> list(String nama, String nis, SiswaStatus status, Jenjang jenjang,
-                                     Pageable pageable) {
+            Pageable pageable) {
         return siswaRepository.search(nama, nis, status, jenjang, pageable)
                 .map(SiswaResponse::from);
     }
@@ -56,8 +55,8 @@ public class SiswaService {
             throw new DuplicateResourceException("NIS sudah terdaftar pada jenjang tersebut");
         }
         toEntity(request, entity);
-        if (request.status() != null) {
-            entity.setStatus(request.status());
+        if (request.status() == null) {
+            entity.setStatus(SiswaStatus.Aktif);
         }
         entity.setUpdatedBy(currentUsername());
         return SiswaResponse.from(siswaRepository.save(entity));
