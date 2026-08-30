@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -38,6 +39,48 @@ class GlobalExceptionHandlerTest {
         assertThat(body.getMessage()).isEqualTo("Data tidak ditemukan");
         assertThat(body.getMeta().path()).isEqualTo("/api/users/1");
         assertThat(body.getMeta().traceId()).isNotBlank();
+    }
+
+    @Test
+    void invalidCredentialsReturnsErrorEnvelopeWith401() {
+        when(request.getRequestURI()).thenReturn("/api/auth/login");
+
+        ResponseEntity<ApiResponse<Void>> response =
+                handler.handleInvalidCredentials(new InvalidCredentialsException("Username atau password salah"), request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        ApiResponse<Void> body = response.getBody();
+        assertThat(body.isSuccess()).isFalse();
+        assertThat(body.getMessage()).isEqualTo("Username atau password salah");
+        assertThat(body.getMeta().path()).isEqualTo("/api/auth/login");
+    }
+
+    @Test
+    void invalidTokenReturnsErrorEnvelopeWith401() {
+        when(request.getRequestURI()).thenReturn("/api/auth/refresh");
+
+        ResponseEntity<ApiResponse<Void>> response =
+                handler.handleInvalidToken(new InvalidTokenException("Refresh token tidak valid"), request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        ApiResponse<Void> body = response.getBody();
+        assertThat(body.isSuccess()).isFalse();
+        assertThat(body.getMessage()).isEqualTo("Refresh token tidak valid");
+        assertThat(body.getMeta().path()).isEqualTo("/api/auth/refresh");
+    }
+
+    @Test
+    void accessDeniedReturnsErrorEnvelopeWith403() {
+        when(request.getRequestURI()).thenReturn("/api/penilaian");
+
+        ResponseEntity<ApiResponse<Void>> response =
+                handler.handleAccessDenied(new AccessDeniedException("denied"), request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        ApiResponse<Void> body = response.getBody();
+        assertThat(body.isSuccess()).isFalse();
+        assertThat(body.getMessage()).isEqualTo("Akses ditolak");
+        assertThat(body.getMeta().path()).isEqualTo("/api/penilaian");
     }
 
     @Test

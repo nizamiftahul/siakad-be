@@ -25,6 +25,14 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+app:
+  jwt:
+    # Wajib diganti pada production dengan base64 >= 32 bytes (HS256) via env JWT_SECRET.
+    # Default di bawah valid-base64 agar aplikasi bisa boot di development.
+    secret: ${JWT_SECRET:c2lha2FkLWRldi1qd3Qtc2lnbmluZy1rZXkhMDEyMzQ1Njc4OWFiY2RlZmdoaWpr}
+    access-token-expiration-ms: 900000      # 15 menit
+    refresh-token-expiration-ms: 604800000  # 7 hari
+
 management:
   endpoints:
     web:
