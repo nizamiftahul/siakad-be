@@ -1,0 +1,30 @@
+package com.siakad.siswa.repository;
+
+import com.siakad.common.enums.Jenjang;
+import com.siakad.common.enums.SiswaStatus;
+import com.siakad.siswa.entity.SiswaEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
+
+    @Query("""
+            SELECT s FROM SiswaEntity s
+            WHERE (:nama IS NULL OR LOWER(s.nama) LIKE LOWER(CONCAT('%', :nama, '%')))
+              AND (:nis IS NULL OR s.nis = :nis)
+              AND (:status IS NULL OR s.status = :status)
+              AND (:jenjang IS NULL OR s.jenjang = :jenjang)
+            """)
+    Page<SiswaEntity> search(@Param("nama") String nama,
+                              @Param("nis") String nis,
+                              @Param("status") SiswaStatus status,
+                              @Param("jenjang") Jenjang jenjang,
+                              Pageable pageable);
+
+    boolean existsByNisAndJenjang(String nis, Jenjang jenjang);
+
+    boolean existsByNisAndJenjangAndIdNot(String nis, Jenjang jenjang, Integer id);
+}
