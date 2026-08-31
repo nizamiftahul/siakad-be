@@ -34,7 +34,8 @@ docker/
 └── initdb/01-schema.sql       # skema database awal (auto-dijalankan Postgres saat volume baru dibuat)
 ```
 
-Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD), dan Swagger/OpenAPI documentation.
+Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD), manajemen periode (CRUD),
+opsi kelas (scoped by jenjang), manajemen kelas grup (CRUD), dan Swagger/OpenAPI documentation.
 
 ---
 
@@ -97,6 +98,18 @@ mvn spring-boot:run
 - `PUT /api/periode/{id}` — update data periode
 - `DELETE /api/periode/{id}` — hapus periode
 
+### Kelas (`/api/kelas`)
+
+- `GET /api/kelas/options` — daftar opsi kelas (untuk dropdown/select), dibatasi jenjang dari session
+
+### Kelas Grup (`/api/kelas-grup`)
+
+- `GET /api/kelas-grup` — daftar kelas grup (dengan pagination, filter by nama/periodeId, dibatasi jenjang dari session lewat `kelasId`)
+- `GET /api/kelas-grup/{id}` — detail kelas grup berdasarkan ID
+- `POST /api/kelas-grup` — buat kelas grup baru (validasi referensi `kelasId`/`periodeId`/`waliKelasId` ke jenjang session, serta keunikan nama & wali kelas per periode)
+- `PUT /api/kelas-grup/{id}` — update data kelas grup
+- `DELETE /api/kelas-grup/{id}` — hapus kelas grup
+
 ---
 
 ## Skema Database
@@ -113,15 +126,9 @@ di-restore dari `docker/initdb/01-schema.sql`, yang otomatis dijalankan Postgres
   ⚠️ Perintah ini menghapus seluruh data di volume `siakad_pgdata`.
 - Flyway tetap aktif (`spring.jpa.hibernate.ddl-auto: validate`) untuk mengelola perubahan skema
   _setelah_ skema awal ini — tambahkan migrasi baru di `src/main/resources/db/migration/`
-  dengan penamaan `V<n>__deskripsi.sql`. Saat ini belum ada migrasi (direktori kosong) karena
-  semua tabel sudah dibuat oleh `01-schema.sql`.
-
----
-
-## Endpoint API
-
-Belum ada endpoint REST aktif — akan ditambahkan per fitur mengikuti struktur package-by-feature
-di atas.
+  dengan penamaan `V<n>__deskripsi.sql`. Migrasi yang sudah ada: `V2__create_refresh_token_table.sql`
+  (tabel `RefreshToken` untuk JWT refresh flow) dan `V3__seed_default_admin_user.sql` (seed user admin
+  default).
 
 ---
 
