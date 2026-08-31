@@ -116,6 +116,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Akses ditolak", null, meta));
     }
 
+    @ExceptionHandler(BusinessRuleViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessRuleViolation(BusinessRuleViolationException ex,
+                                                                         HttpServletRequest request) {
+        Meta meta = Meta.of(request.getRequestURI(), TraceIdUtil.newTraceId());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ApiResponse.error(ex.getMessage(), null, meta));
+    }
+
     // Handler khusus untuk exception yang sudah dipetakan ke status tertentu ditaruh di atas
     // handler generik ini. Jika suatu hari ada exception aturan bisnis yang perlu 422,
     // tambahkan handler dedicated untuk itu daripada memakai fallback ini.

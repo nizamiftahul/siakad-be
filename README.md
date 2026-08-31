@@ -34,8 +34,7 @@ docker/
 └── initdb/01-schema.sql       # skema database awal (auto-dijalankan Postgres saat volume baru dibuat)
 ```
 
-> Saat ini belum ada fitur REST aktif — package fitur akan ditambahkan seiring pengembangan
-> (mis. `guru/`, `siswa/`, `kelas/`).
+Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD), dan Swagger/OpenAPI documentation.
 
 ---
 
@@ -50,12 +49,12 @@ docker compose up -d
 Atau jika PostgreSQL sudah berjalan di mesin Anda, sesuaikan kredensial di
 `src/main/resources/application.yml` (atau lewat env):
 
-| Variabel      | Default value                       |
-|---------------|-------------------------------------|
+| Variabel      | Default value                             |
+| ------------- | ----------------------------------------- |
 | `DB_URL`      | `jdbc:postgresql://localhost:5432/siakad` |
-| `DB_USERNAME` | `siakad`                            |
-| `DB_PASSWORD` | `siakad`                            |
-| `SERVER_PORT` | `8080`                              |
+| `DB_USERNAME` | `siakad`                                  |
+| `DB_PASSWORD` | `siakad`                                  |
+| `SERVER_PORT` | `8080`                                    |
 
 ### 2. Build & jalankan aplikasi
 
@@ -70,6 +69,33 @@ mvn spring-boot:run
 ### 3. Verifikasi
 
 - Health check: http://localhost:8080/actuator/health
+- API Docs: http://localhost:8080/swagger-ui.html
+
+---
+
+## Endpoint API
+
+### Autentikasi (`/api/auth`)
+
+- `POST /api/auth/login` — login dengan email dan password, mengembalikan access token & refresh token
+- `POST /api/auth/refresh` — refresh access token menggunakan refresh token
+- `POST /api/auth/logout` — logout dan invalidate refresh token
+
+### Siswa (`/api/siswa`)
+
+- `GET /api/siswa` — daftar siswa (dengan pagination, filter by jenjang dari session)
+- `GET /api/siswa/{id}` — detail siswa berdasarkan ID
+- `POST /api/siswa` — buat siswa baru
+- `PUT /api/siswa/{id}` — update data siswa
+- `DELETE /api/siswa/{id}` — hapus siswa
+
+### Periode (`/api/periode`)
+
+- `GET /api/periode` — daftar periode (dengan pagination, filter by nama/status, dibatasi jenjang dari session)
+- `GET /api/periode/{id}` — detail periode berdasarkan ID
+- `POST /api/periode` — buat periode baru
+- `PUT /api/periode/{id}` — update data periode
+- `DELETE /api/periode/{id}` — hapus periode
 
 ---
 
@@ -86,7 +112,7 @@ di-restore dari `docker/initdb/01-schema.sql`, yang otomatis dijalankan Postgres
   ```
   ⚠️ Perintah ini menghapus seluruh data di volume `siakad_pgdata`.
 - Flyway tetap aktif (`spring.jpa.hibernate.ddl-auto: validate`) untuk mengelola perubahan skema
-  *setelah* skema awal ini — tambahkan migrasi baru di `src/main/resources/db/migration/`
+  _setelah_ skema awal ini — tambahkan migrasi baru di `src/main/resources/db/migration/`
   dengan penamaan `V<n>__deskripsi.sql`. Saat ini belum ada migrasi (direktori kosong) karena
   semua tabel sudah dibuat oleh `01-schema.sql`.
 

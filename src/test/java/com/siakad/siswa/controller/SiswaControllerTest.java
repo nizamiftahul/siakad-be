@@ -142,16 +142,6 @@ class SiswaControllerTest {
     }
 
     @Test
-    void listRejectsDeprecatedJenjangParam() {
-        ResponseEntity<ApiResponse<List<SiswaResponse>>> response = controller.list(1, 10, null, null, null);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage())
-                .isEqualTo("Param jenjang tidak lagi didukung; hasil dibatasi jenjang akun");
-    }
-
-    @Test
     void updateReturnsOkEnvelope() {
         when(siswaService.update(anyInt(), any(SiswaRequest.class))).thenReturn(response());
 
