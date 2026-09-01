@@ -1,0 +1,23 @@
+DROP TRIGGER IF EXISTS absensi_bu ON public."Absensi";
+DROP TRIGGER IF EXISTS guru_bu ON public."Guru";
+DROP TRIGGER IF EXISTS jenis_pembayaran_bu ON public."JenisPembayaran";
+DROP TRIGGER IF EXISTS jenis_penilaian_bu ON public."JenisPenilaian";
+DROP TRIGGER IF EXISTS kalender_akademik_bu ON public."KalenderAkademik";
+DROP TRIGGER IF EXISTS kelas_bu ON public."Kelas";
+DROP TRIGGER IF EXISTS kelas_grup_bu ON public."KelasGrup";
+DROP TRIGGER IF EXISTS kelas_siswa_bu ON public."KelasSiswa";
+DROP TRIGGER IF EXISTS pelajaran_bu ON public."Pelajaran";
+DROP TRIGGER IF EXISTS pembayaran_bu ON public."Pembayaran";
+DROP TRIGGER IF EXISTS pembayaran_lainnya_bu ON public."PembayaranLainnya";
+DROP TRIGGER IF EXISTS pembayaran_lainnya_detail_bu ON public."PembayaranLainnyaDetail";
+DROP TRIGGER IF EXISTS pembayaran_spp_bu ON public."PembayaranSPP";
+DROP TRIGGER IF EXISTS pemberitahuan_bu ON public."Pemberitahuan";
+DROP TRIGGER IF EXISTS penilaian_bu ON public."Penilaian";
+DROP TRIGGER IF EXISTS penilaian_detail_bu ON public."PenilaianDetail";
+DROP TRIGGER IF EXISTS periode_bu ON public."Periode";
+DROP TRIGGER IF EXISTS semester_bu ON public."Semester";
+DROP TRIGGER IF EXISTS siswa_bu ON public."Siswa";
+DROP TRIGGER IF EXISTS siswa_device_token_bu ON public."SiswaDeviceToken";
+DROP TRIGGER IF EXISTS user_bu ON public."User";
+
+DROP FUNCTION IF EXISTS public.trigger_set_timestamp_on_update();
