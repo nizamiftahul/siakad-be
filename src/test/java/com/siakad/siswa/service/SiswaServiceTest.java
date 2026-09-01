@@ -161,6 +161,22 @@ class SiswaServiceTest {
     }
 
     @Test
+    void optionsReturnsEntriesScopedBySessionJenjangOrderedByNama() {
+        authenticateAs(Jenjang.SD);
+        when(siswaRepository.findByJenjangOrderByNamaAsc(Jenjang.SD))
+                .thenReturn(List.of(
+                        SiswaEntity.builder().id(1).nama("Budi").jenjang(Jenjang.SD).build(),
+                        SiswaEntity.builder().id(2).nama("Andi").jenjang(Jenjang.SD).build()));
+
+        var result = siswaService.options();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).id()).isEqualTo(1);
+        assertThat(result.get(0).nama()).isEqualTo("Budi");
+        assertThat(result.get(1).nama()).isEqualTo("Andi");
+    }
+
+    @Test
     void updateAppliesRequestFieldsAndKeepsSessionJenjang() {
         authenticateAs(Jenjang.SD);
         SiswaEntity existing = entity(1, "NIS001", Jenjang.SD);

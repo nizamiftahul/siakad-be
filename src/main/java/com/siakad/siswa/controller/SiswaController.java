@@ -3,6 +3,7 @@ package com.siakad.siswa.controller;
 import com.siakad.common.enums.SiswaStatus;
 import com.siakad.common.response.ApiResponse;
 import com.siakad.common.response.Pagination;
+import com.siakad.siswa.dto.SiswaOptionResponse;
 import com.siakad.siswa.dto.SiswaRequest;
 import com.siakad.siswa.dto.SiswaResponse;
 import com.siakad.siswa.service.SiswaService;
@@ -49,6 +50,12 @@ public class SiswaController {
     @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
     public ResponseEntity<ApiResponse<SiswaResponse>> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(siswaService.getById(id)));
+    }
+
+    @GetMapping("/options")
+    @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
+    public ResponseEntity<ApiResponse<List<SiswaOptionResponse>>> options() {
+        return ResponseEntity.ok(ApiResponse.success(siswaService.options()));
     }
 
     @GetMapping

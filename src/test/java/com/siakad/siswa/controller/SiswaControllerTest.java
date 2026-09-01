@@ -3,6 +3,7 @@ package com.siakad.siswa.controller;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.enums.SiswaStatus;
 import com.siakad.common.response.ApiResponse;
+import com.siakad.siswa.dto.SiswaOptionResponse;
 import com.siakad.siswa.dto.SiswaRequest;
 import com.siakad.siswa.dto.SiswaResponse;
 import com.siakad.siswa.service.SiswaService;
@@ -160,5 +161,16 @@ class SiswaControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getMessage()).isEqualTo("Siswa berhasil dihapus");
         verify(siswaService).delete(1);
+    }
+
+    @Test
+    void optionsReturnsOkEnvelope() {
+        when(siswaService.options()).thenReturn(List.of(new SiswaOptionResponse(1, "Budi")));
+
+        ResponseEntity<ApiResponse<List<SiswaOptionResponse>>> response = controller.options();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData()).hasSize(1);
+        assertThat(response.getBody().getData().get(0).nama()).isEqualTo("Budi");
     }
 }

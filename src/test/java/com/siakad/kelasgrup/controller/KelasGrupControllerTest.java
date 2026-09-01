@@ -1,6 +1,7 @@
 package com.siakad.kelasgrup.controller;
 
 import com.siakad.common.response.ApiResponse;
+import com.siakad.kelasgrup.dto.KelasGrupOptionResponse;
 import com.siakad.kelasgrup.dto.KelasGrupRequest;
 import com.siakad.kelasgrup.dto.KelasGrupResponse;
 import com.siakad.kelasgrup.service.KelasGrupService;
@@ -114,5 +115,26 @@ class KelasGrupControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getMessage()).isEqualTo("Kelas grup berhasil dihapus");
         verify(kelasGrupService).delete(1);
+    }
+
+    @Test
+    void optionsReturnsOkEnvelope() {
+        when(kelasGrupService.options(null)).thenReturn(List.of(new KelasGrupOptionResponse(1, "7A")));
+
+        ResponseEntity<ApiResponse<List<KelasGrupOptionResponse>>> response = controller.options(null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData()).hasSize(1);
+        assertThat(response.getBody().getData().get(0).nama()).isEqualTo("7A");
+    }
+
+    @Test
+    void optionsWithPeriodeIdReturnsOkEnvelope() {
+        when(kelasGrupService.options(2)).thenReturn(List.of(new KelasGrupOptionResponse(1, "7A")));
+
+        ResponseEntity<ApiResponse<List<KelasGrupOptionResponse>>> response = controller.options(2);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData()).hasSize(1);
     }
 }

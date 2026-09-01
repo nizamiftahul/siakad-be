@@ -5,6 +5,7 @@ import com.siakad.common.enums.Jenjang;
 import com.siakad.common.enums.SiswaStatus;
 import com.siakad.common.exception.DuplicateResourceException;
 import com.siakad.common.exception.ResourceNotFoundException;
+import com.siakad.siswa.dto.SiswaOptionResponse;
 import com.siakad.siswa.dto.SiswaRequest;
 import com.siakad.siswa.dto.SiswaResponse;
 import com.siakad.siswa.entity.SiswaEntity;
@@ -16,6 +17,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -49,6 +52,13 @@ public class SiswaService {
                 .map(SiswaResponse::from);
     }
 
+    @Transactional(readOnly = true)
+    public List<SiswaOptionResponse> options() {
+        return siswaRepository.findByJenjangOrderByNamaAsc(currentJenjang()).stream()
+                .map(SiswaOptionResponse::from)
+                .toList();
+    }
+
     public SiswaResponse update(Integer id, SiswaRequest request) {
         SiswaEntity entity = findOrThrow(id);
         Jenjang jenjang = entity.getJenjang();
@@ -57,8 +67,8 @@ public class SiswaService {
         }
         toEntity(request, entity);
         entity.setJenjang(jenjang);
-        if (request.status() == null) {
-            entity.setStatus(SiswaStatus.Aktif);
+        if (request.status() != null) {
+            entity.setStatus(request.status());
         }
         entity.setUpdatedBy(currentUsername());
         return SiswaResponse.from(siswaRepository.save(entity));

@@ -2,6 +2,7 @@ package com.siakad.kelasgrup.controller;
 
 import com.siakad.common.response.ApiResponse;
 import com.siakad.common.response.Pagination;
+import com.siakad.kelasgrup.dto.KelasGrupOptionResponse;
 import com.siakad.kelasgrup.dto.KelasGrupRequest;
 import com.siakad.kelasgrup.dto.KelasGrupResponse;
 import com.siakad.kelasgrup.service.KelasGrupService;
@@ -48,6 +49,13 @@ public class KelasGrupController {
     @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
     public ResponseEntity<ApiResponse<KelasGrupResponse>> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(kelasGrupService.getById(id)));
+    }
+
+    @GetMapping("/options")
+    @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
+    public ResponseEntity<ApiResponse<List<KelasGrupOptionResponse>>> options(
+            @RequestParam(required = true) Integer periodeId) {
+        return ResponseEntity.ok(ApiResponse.success(kelasGrupService.options(periodeId)));
     }
 
     @GetMapping

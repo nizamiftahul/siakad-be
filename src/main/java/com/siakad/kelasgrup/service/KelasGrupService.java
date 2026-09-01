@@ -6,6 +6,7 @@ import com.siakad.common.exception.DuplicateResourceException;
 import com.siakad.common.exception.ResourceNotFoundException;
 import com.siakad.guru.repository.GuruRepository;
 import com.siakad.kelas.repository.KelasRepository;
+import com.siakad.kelasgrup.dto.KelasGrupOptionResponse;
 import com.siakad.kelasgrup.dto.KelasGrupRequest;
 import com.siakad.kelasgrup.dto.KelasGrupResponse;
 import com.siakad.kelasgrup.entity.KelasGrupEntity;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @Transactional
@@ -52,6 +54,13 @@ public class KelasGrupService {
     public Page<KelasGrupResponse> list(String nama, Integer periodeId, Pageable pageable) {
         return kelasGrupRepository.search(nama, periodeId, currentJenjang(), pageable)
                 .map(KelasGrupResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<KelasGrupOptionResponse> options(Integer periodeId) {
+        return kelasGrupRepository.findOptions(periodeId, currentJenjang()).stream()
+                .map(KelasGrupOptionResponse::from)
+                .toList();
     }
 
     public KelasGrupResponse update(Integer id, KelasGrupRequest request) {

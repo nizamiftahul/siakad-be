@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface KelasGrupRepository extends JpaRepository<KelasGrupEntity, Integer> {
@@ -33,6 +34,14 @@ public interface KelasGrupRepository extends JpaRepository<KelasGrupEntity, Inte
         @Param("periodeId") Integer periodeId,
         @Param("jenjang") Jenjang jenjang,
         Pageable pageable);
+
+    @Query("""
+        SELECT kg FROM KelasGrupEntity kg
+        WHERE (:periodeId IS NULL OR kg.periodeId = :periodeId)
+          AND kg.kelasId IN (SELECT k.id FROM KelasEntity k WHERE k.jenjang = :jenjang)
+        ORDER BY kg.nama ASC
+        """)
+    List<KelasGrupEntity> findOptions(@Param("periodeId") Integer periodeId, @Param("jenjang") Jenjang jenjang);
 
     boolean existsByNamaAndPeriodeId(String nama, Integer periodeId);
 

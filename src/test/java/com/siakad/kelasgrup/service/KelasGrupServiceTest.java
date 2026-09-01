@@ -8,7 +8,10 @@ import com.siakad.common.exception.DuplicateResourceException;
 import com.siakad.common.exception.ResourceNotFoundException;
 import com.siakad.guru.repository.GuruRepository;
 import com.siakad.kelas.repository.KelasRepository;
+import com.siakad.kelasgrup.dto.KelasGrupOptionResponse;
+
 import com.siakad.kelasgrup.dto.KelasGrupRequest;
+
 import com.siakad.kelasgrup.dto.KelasGrupResponse;
 import com.siakad.kelasgrup.entity.KelasGrupEntity;
 import com.siakad.kelasgrup.repository.KelasGrupRepository;
@@ -245,6 +248,31 @@ class KelasGrupServiceTest {
     }
 
     @Test
+    void optionsReturnsEntriesScopedByJenjangOrderedByNama() {
+        authenticateAs(Jenjang.SD);
+        when(kelasGrupRepository.findOptions(null, Jenjang.SD))
+                .thenReturn(List.of(entity(1, "7A"), entity(2, "7B")));
+
+        var result = kelasGrupService.options(null);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).nama()).isEqualTo("7A");
+        assertThat(result.get(1).nama()).isEqualTo("7B");
+    }
+
+    @Test
+    void optionsForwardsPeriodeFilterToRepository() {
+        authenticateAs(Jenjang.SD);
+        when(kelasGrupRepository.findOptions(2, Jenjang.SD))
+                .thenReturn(List.of(entity(1, "7A")));
+
+        var result = kelasGrupService.options(2);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).id()).isEqualTo(1);
+        verify(kelasGrupRepository).findOptions(2, Jenjang.SD);
+    }
+
     void updateAppliesRequestFields() {
         authenticateAs(Jenjang.SD);
         KelasGrupEntity existing = entity(1, "7A");
