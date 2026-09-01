@@ -22,7 +22,7 @@ public class KelasController {
     private final KelasService kelasService;
 
     @GetMapping("/options")
-    @PreAuthorize("hasAnyRole('Admin', 'KSatu', 'Guru')")
+    @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
     public ResponseEntity<ApiResponse<List<KelasOptionResponse>>> options() {
         return ResponseEntity.ok(ApiResponse.success(kelasService.options()));
     }

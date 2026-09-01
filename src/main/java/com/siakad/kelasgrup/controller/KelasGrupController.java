@@ -45,13 +45,13 @@ public class KelasGrupController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin', 'KSatu', 'Guru')")
+    @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
     public ResponseEntity<ApiResponse<KelasGrupResponse>> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(kelasGrupService.getById(id)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('Admin', 'KSatu', 'Guru')")
+    @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
     public ResponseEntity<ApiResponse<List<KelasGrupResponse>>> list(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "page minimal 1") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "size minimal 1") @Max(value = 100, message = "size maksimal 100") int size,
