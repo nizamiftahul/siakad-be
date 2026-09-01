@@ -2,6 +2,8 @@ package com.siakad.periode.controller;
 
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.response.ApiResponse;
+import com.siakad.guru.dto.GuruOptionResponse;
+import com.siakad.periode.dto.PeriodeOptionResponse;
 import com.siakad.periode.dto.PeriodeRequest;
 import com.siakad.periode.dto.PeriodeResponse;
 import com.siakad.periode.service.PeriodeService;
@@ -79,6 +81,17 @@ class PeriodeControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getData().id()).isEqualTo(1);
+    }
+
+    @Test
+    void optionsReturnsOkEnvelope() {
+        when(periodeService.options()).thenReturn(List.of(new PeriodeOptionResponse(1, "2026-2027")));
+
+        ResponseEntity<ApiResponse<List<PeriodeOptionResponse>>> response = controller.options();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData()).hasSize(1);
+        assertThat(response.getBody().getData().get(0).nama()).isEqualTo("2026-2027");
     }
 
     @Test

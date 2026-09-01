@@ -36,259 +36,277 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PeriodeServiceTest {
 
-    @Mock
-    private PeriodeRepository periodeRepository;
+        @Mock
+        private PeriodeRepository periodeRepository;
 
-    private PeriodeService periodeService;
+        private PeriodeService periodeService;
 
-    @BeforeEach
-    void setUp() {
-        periodeService = new PeriodeService(periodeRepository);
-    }
+        @BeforeEach
+        void setUp() {
+                periodeService = new PeriodeService(periodeRepository);
+        }
 
-    @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
-    }
+        @AfterEach
+        void tearDown() {
+                SecurityContextHolder.clearContext();
+        }
 
-    private PeriodeRequest request(String nama) {
-        return new PeriodeRequest(
-                null, // description
-                nama,
-                LocalDate.of(2026, 1, 1), // tglMulai
-                LocalDate.of(2026, 6, 30), // tglSelesai
-                null); // status
-    }
+        private PeriodeRequest request(String nama) {
+                return new PeriodeRequest(
+                                null, // description
+                                nama,
+                                LocalDate.of(2026, 1, 1), // tglMulai
+                                LocalDate.of(2026, 6, 30), // tglSelesai
+                                null); // status
+        }
 
-    private PeriodeEntity entity(Integer id, String nama, Jenjang jenjang, Boolean status) {
-        return PeriodeEntity.builder()
-                .id(id)
-                .nama(nama)
-                .tglMulai(LocalDate.of(2026, 1, 1))
-                .tglSelesai(LocalDate.of(2026, 6, 30))
-                .status(status)
-                .jenjang(jenjang)
-                .build();
-    }
+        private PeriodeEntity entity(Integer id, String nama, Jenjang jenjang, Boolean status) {
+                return PeriodeEntity.builder()
+                                .id(id)
+                                .nama(nama)
+                                .tglMulai(LocalDate.of(2026, 1, 1))
+                                .tglSelesai(LocalDate.of(2026, 6, 30))
+                                .status(status)
+                                .jenjang(jenjang)
+                                .build();
+        }
 
-    private void authenticateAs(Jenjang jenjang) {
-        UserEntity user = UserEntity.builder()
-                .id(1)
-                .username("admin")
-                .name("Administrator")
-                .role(Role.Admin)
-                .jenjang(jenjang)
-                .hashedPassword("hash")
-                .build();
-        UserPrincipal principal = new UserPrincipal(user);
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
-    }
-@Test
-    void createSavesEntityUsingSessionJenjangAndDefaultsStatusToFalse() {
-        authenticateAs(Jenjang.SD);
-        when(periodeRepository.save(any(PeriodeEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        private void authenticateAs(Jenjang jenjang) {
+                UserEntity user = UserEntity.builder()
+                                .id(1)
+                                .username("admin")
+                                .name("Administrator")
+                                .role(Role.Admin)
+                                .jenjang(jenjang)
+                                .hashedPassword("hash")
+                                .build();
+                UserPrincipal principal = new UserPrincipal(user);
+                SecurityContextHolder.getContext().setAuthentication(
+                                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        }
 
-        PeriodeResponse response = periodeService.create(request("2026/2027"));
+        @Test
+        void createSavesEntityUsingSessionJenjangAndDefaultsStatusToFalse() {
+                authenticateAs(Jenjang.SD);
+                when(periodeRepository.save(any(PeriodeEntity.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ArgumentCaptor<PeriodeEntity> captor = ArgumentCaptor.forClass(PeriodeEntity.class);
-        verify(periodeRepository).save(captor.capture());
-        PeriodeEntity saved = captor.getValue();
-        assertThat(saved.getJenjang()).isEqualTo(Jenjang.SD);
-        assertThat(saved.getStatus()).isFalse();
-        assertThat(saved.getCreatedBy()).isEqualTo("admin");
-        assertThat(saved.getUpdatedBy()).isEqualTo("admin");
-        assertThat(response.nama()).isEqualTo("2026/2027");
-        assertThat(response.jenjang()).isEqualTo(Jenjang.SD);
-    }
+                PeriodeResponse response = periodeService.create(request("2026/2027"));
 
-    @Test
-    void createPreservesProvidedStatusTrue() {
-        authenticateAs(Jenjang.SD);
-        when(periodeRepository.save(any(PeriodeEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                ArgumentCaptor<PeriodeEntity> captor = ArgumentCaptor.forClass(PeriodeEntity.class);
+                verify(periodeRepository).save(captor.capture());
+                PeriodeEntity saved = captor.getValue();
+                assertThat(saved.getJenjang()).isEqualTo(Jenjang.SD);
+                assertThat(saved.getStatus()).isFalse();
+                assertThat(saved.getCreatedBy()).isEqualTo("admin");
+                assertThat(saved.getUpdatedBy()).isEqualTo("admin");
+                assertThat(response.nama()).isEqualTo("2026/2027");
+                assertThat(response.jenjang()).isEqualTo(Jenjang.SD);
+        }
 
-        PeriodeRequest r = new PeriodeRequest(
-                null, "2026/2027",
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
-                true);
+        @Test
+        void createPreservesProvidedStatusTrue() {
+                authenticateAs(Jenjang.SD);
+                when(periodeRepository.save(any(PeriodeEntity.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        PeriodeResponse response = periodeService.create(r);
+                PeriodeRequest r = new PeriodeRequest(
+                                null, "2026/2027",
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
+                                true);
 
-        assertThat(response.status()).isTrue();
-    }
+                PeriodeResponse response = periodeService.create(r);
 
-    @Test
-    void getByIdReturnsMappedResponse() {
-        authenticateAs(Jenjang.SD);
-        when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD))
-                .thenReturn(Optional.of(entity(1, "2026/2027", Jenjang.SD, true)));
+                assertThat(response.status()).isTrue();
+        }
 
-        PeriodeResponse response = periodeService.getById(1);
+        @Test
+        void getByIdReturnsMappedResponse() {
+                authenticateAs(Jenjang.SD);
+                when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD))
+                                .thenReturn(Optional.of(entity(1, "2026/2027", Jenjang.SD, true)));
 
-        assertThat(response.id()).isEqualTo(1);
-        assertThat(response.nama()).isEqualTo("2026/2027");
-        assertThat(response.jenjang()).isEqualTo(Jenjang.SD);
-    }
+                PeriodeResponse response = periodeService.getById(1);
 
-    @Test
-    void getByIdWithUnknownIdThrowsResourceNotFound() {
-        authenticateAs(Jenjang.SD);
-        when(periodeRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
+                assertThat(response.id()).isEqualTo(1);
+                assertThat(response.nama()).isEqualTo("2026/2027");
+                assertThat(response.jenjang()).isEqualTo(Jenjang.SD);
+        }
 
-        assertThatThrownBy(() -> periodeService.getById(99))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Periode dengan id 99 tidak ditemukan");
-    }
+        @Test
+        void getByIdWithUnknownIdThrowsResourceNotFound() {
+                authenticateAs(Jenjang.SD);
+                when(periodeRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
 
-    @Test
-    void listDelegatesToRepositorySearchScopedBySessionJenjang() {
-        authenticateAs(Jenjang.SD);
-        var page = new PageImpl<>(List.of(entity(1, "2026/2027", Jenjang.SD, true)),
-                PageRequest.of(0, 10), 1);
-        when(periodeRepository.search(eq("2026"), eq(true), eq(Jenjang.SD), any()))
-                .thenReturn(page);
+                assertThatThrownBy(() -> periodeService.getById(99))
+                                .isInstanceOf(ResourceNotFoundException.class)
+                                .hasMessage("Periode dengan id 99 tidak ditemukan");
+        }
 
-        var result = periodeService.list("2026", true, PageRequest.of(0, 10));
+        @Test
+        void optionsReturnsEntriesScopedBySessionJenjangOrderedByNama() {
+                authenticateAs(Jenjang.SD);
+                when(periodeRepository.findByJenjangOrderByNamaAsc(Jenjang.SD))
+                                .thenReturn(List.of(entity(1, "2025-2026", Jenjang.SD, false),
+                                                entity(2, "2026-2027", Jenjang.SD, true)));
 
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).nama()).isEqualTo("2026/2027");
-    }
+                var result = periodeService.options();
 
-    @Test
-    void updateAppliesRequestFieldsAndKeepsExistingJenjang() {
-        authenticateAs(Jenjang.SD);
-        PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, true);
-        when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(periodeRepository.save(any(PeriodeEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                assertThat(result).hasSize(2);
+                assertThat(result.get(0).id()).isEqualTo(1);
+                assertThat(result.get(0).nama()).isEqualTo("2025-2026");
+                assertThat(result.get(1).nama()).isEqualTo("2026-2027");
+        }
 
-        PeriodeResponse response = periodeService.update(1, request("2026/2027"));
+        @Test
+        void listDelegatesToRepositorySearchScopedBySessionJenjang() {
+                authenticateAs(Jenjang.SD);
+                var page = new PageImpl<>(List.of(entity(1, "2026/2027", Jenjang.SD, true)),
+                                PageRequest.of(0, 10), 1);
+                when(periodeRepository.search(eq("2026"), eq(true), eq(Jenjang.SD), any()))
+                                .thenReturn(page);
 
-        assertThat(response.nama()).isEqualTo("2026/2027");
-        assertThat(response.tglMulai()).isEqualTo(LocalDate.of(2026, 1, 1));
-        assertThat(response.jenjang()).isEqualTo(Jenjang.SD);
-        assertThat(response.updatedBy()).isEqualTo("admin");
-        // status tidak dikirim di request -> dipertahankan dari record lama (true).
-        assertThat(response.status()).isTrue();
-    }
+                var result = periodeService.list("2026", true, PageRequest.of(0, 10));
 
-    @Test
-    void updateWithExplicitStatusOverwrites() {
-        authenticateAs(Jenjang.SD);
-        PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, true);
-        when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(periodeRepository.save(any(PeriodeEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(2L); // At least 2 active periods
+                assertThat(result.getContent()).hasSize(1);
+                assertThat(result.getContent().get(0).nama()).isEqualTo("2026/2027");
+        }
 
-        PeriodeRequest r = new PeriodeRequest(
-                null, "2026/2027",
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
-                false);
+        @Test
+        void updateAppliesRequestFieldsAndKeepsExistingJenjang() {
+                authenticateAs(Jenjang.SD);
+                PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, true);
+                when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
+                when(periodeRepository.save(any(PeriodeEntity.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        PeriodeResponse response = periodeService.update(1, r);
+                PeriodeResponse response = periodeService.update(1, request("2026/2027"));
 
-        assertThat(response.status()).isFalse();
-    }
+                assertThat(response.nama()).isEqualTo("2026/2027");
+                assertThat(response.tglMulai()).isEqualTo(LocalDate.of(2026, 1, 1));
+                assertThat(response.jenjang()).isEqualTo(Jenjang.SD);
+                assertThat(response.updatedBy()).isEqualTo("admin");
+                // status tidak dikirim di request -> dipertahankan dari record lama (true).
+                assertThat(response.status()).isTrue();
+        }
 
-    @Test
-    void updateWithUnknownIdThrowsResourceNotFound() {
-        authenticateAs(Jenjang.SD);
-        when(periodeRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
+        @Test
+        void updateWithExplicitStatusOverwrites() {
+                authenticateAs(Jenjang.SD);
+                PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, true);
+                when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
+                when(periodeRepository.save(any(PeriodeEntity.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
+                when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(2L); // At least 2 active
+                                                                                                // periods
 
-        assertThatThrownBy(() -> periodeService.update(99, request("2026/2027")))
-                .isInstanceOf(ResourceNotFoundException.class);
-    }
+                PeriodeRequest r = new PeriodeRequest(
+                                null, "2026/2027",
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
+                                false);
 
-    @Test
-    void deleteRemovesEntity() {
-        authenticateAs(Jenjang.SD);
-        PeriodeEntity existing = entity(1, "2026/2027", Jenjang.SD, true);
-        when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(2L); // At least 2 active periods
+                PeriodeResponse response = periodeService.update(1, r);
 
-        periodeService.delete(1);
+                assertThat(response.status()).isFalse();
+        }
 
-        verify(periodeRepository).delete(existing);
-    }
+        @Test
+        void updateWithUnknownIdThrowsResourceNotFound() {
+                authenticateAs(Jenjang.SD);
+                when(periodeRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
 
-    @Test
-    void deleteWithUnknownIdThrowsResourceNotFound() {
-        authenticateAs(Jenjang.SD);
-        when(periodeRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
+                assertThatThrownBy(() -> periodeService.update(99, request("2026/2027")))
+                                .isInstanceOf(ResourceNotFoundException.class);
+        }
 
-        assertThatThrownBy(() -> periodeService.delete(99))
-                .isInstanceOf(ResourceNotFoundException.class);
-    }
+        @Test
+        void deleteRemovesEntity() {
+                authenticateAs(Jenjang.SD);
+                PeriodeEntity existing = entity(1, "2026/2027", Jenjang.SD, true);
+                when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
+                when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(2L); // At least 2 active
+                                                                                                // periods
 
-    @Test
-    void deleteLastActivePeriodeThrowsBusinessRuleViolation() {
-        authenticateAs(Jenjang.SD);
-        PeriodeEntity existing = entity(1, "2026/2027", Jenjang.SD, true);
-        when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(1L); // Only 1 active period
+                periodeService.delete(1);
 
-        assertThatThrownBy(() -> periodeService.delete(1))
-                .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessage("Tidak dapat menghapus periode; harus ada minimal 1 periode aktif untuk jenjang SD");
-    }
+                verify(periodeRepository).delete(existing);
+        }
 
-    @Test
-    void deactivateLastActivePeriodeThrowsBusinessRuleViolation() {
-        authenticateAs(Jenjang.SD);
-        PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, true);
-        when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(1L); // Only 1 active period
+        @Test
+        void deleteWithUnknownIdThrowsResourceNotFound() {
+                authenticateAs(Jenjang.SD);
+                when(periodeRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
 
-        PeriodeRequest r = new PeriodeRequest(
-                null, "2026/2027",
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
-                false);
+                assertThatThrownBy(() -> periodeService.delete(99))
+                                .isInstanceOf(ResourceNotFoundException.class);
+        }
 
-        assertThatThrownBy(() -> periodeService.update(1, r))
-                .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessage("Tidak dapat menonaktifkan periode; harus ada minimal 1 periode aktif untuk jenjang SD");
-    }
+        @Test
+        void deleteLastActivePeriodeThrowsBusinessRuleViolation() {
+                authenticateAs(Jenjang.SD);
+                PeriodeEntity existing = entity(1, "2026/2027", Jenjang.SD, true);
+                when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
+                when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(1L); // Only 1 active period
 
-    @Test
-    void createWithStatusTrueDeactivatesOtherActivePeriods() {
-        authenticateAs(Jenjang.SD);
-        PeriodeEntity existing = entity(2, "2025/2026", Jenjang.SD, true);
-        when(periodeRepository.findByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(List.of(existing));
-        when(periodeRepository.save(any(PeriodeEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                assertThatThrownBy(() -> periodeService.delete(1))
+                                .isInstanceOf(BusinessRuleViolationException.class)
+                                .hasMessage("Tidak dapat menghapus periode; harus ada minimal 1 periode aktif untuk jenjang SD");
+        }
 
-        PeriodeRequest r = new PeriodeRequest(
-                null, "2026/2027",
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
-                true);
+        @Test
+        void deactivateLastActivePeriodeThrowsBusinessRuleViolation() {
+                authenticateAs(Jenjang.SD);
+                PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, true);
+                when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
+                when(periodeRepository.countByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(1L); // Only 1 active period
 
-        periodeService.create(r);
+                PeriodeRequest r = new PeriodeRequest(
+                                null, "2026/2027",
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
+                                false);
 
-        verify(periodeRepository).save(existing);
-        assertThat(existing.getStatus()).isFalse();
-    }
+                assertThatThrownBy(() -> periodeService.update(1, r))
+                                .isInstanceOf(BusinessRuleViolationException.class)
+                                .hasMessage("Tidak dapat menonaktifkan periode; harus ada minimal 1 periode aktif untuk jenjang SD");
+        }
 
-    @Test
-    void updateWithStatusTrueDeactivatesOtherActivePeriods() {
-        authenticateAs(Jenjang.SD);
-        PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, false);
-        PeriodeEntity otherActive = entity(2, "2026/2027", Jenjang.SD, true);
-        when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(periodeRepository.findByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(List.of(otherActive));
-        when(periodeRepository.save(any(PeriodeEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        @Test
+        void createWithStatusTrueDeactivatesOtherActivePeriods() {
+                authenticateAs(Jenjang.SD);
+                PeriodeEntity existing = entity(2, "2025/2026", Jenjang.SD, true);
+                when(periodeRepository.findByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(List.of(existing));
+                when(periodeRepository.save(any(PeriodeEntity.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        PeriodeRequest r = new PeriodeRequest(
-                null, "2025/2026",
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
-                true);
+                PeriodeRequest r = new PeriodeRequest(
+                                null, "2026/2027",
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
+                                true);
 
-        periodeService.update(1, r);
+                periodeService.create(r);
 
-        verify(periodeRepository).save(otherActive);
-        assertThat(otherActive.getStatus()).isFalse();
-    }
+                verify(periodeRepository).save(existing);
+                assertThat(existing.getStatus()).isFalse();
+        }
+
+        @Test
+        void updateWithStatusTrueDeactivatesOtherActivePeriods() {
+                authenticateAs(Jenjang.SD);
+                PeriodeEntity existing = entity(1, "2025/2026", Jenjang.SD, false);
+                PeriodeEntity otherActive = entity(2, "2026/2027", Jenjang.SD, true);
+                when(periodeRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
+                when(periodeRepository.findByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(List.of(otherActive));
+                when(periodeRepository.save(any(PeriodeEntity.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
+
+                PeriodeRequest r = new PeriodeRequest(
+                                null, "2025/2026",
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 6, 30),
+                                true);
+
+                periodeService.update(1, r);
+
+                verify(periodeRepository).save(otherActive);
+                assertThat(otherActive.getStatus()).isFalse();
+        }
 }

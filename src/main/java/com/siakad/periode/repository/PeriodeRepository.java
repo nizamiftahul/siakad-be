@@ -29,4 +29,7 @@ public interface PeriodeRepository extends JpaRepository<PeriodeEntity, Integer>
   List<PeriodeEntity> findByJenjangAndStatusTrue(Jenjang jenjang);
 
   long countByJenjangAndStatusTrue(Jenjang jenjang);
+
+  List<PeriodeEntity> findByJenjangOrderByNamaAsc(Jenjang jenjang);
+
 }

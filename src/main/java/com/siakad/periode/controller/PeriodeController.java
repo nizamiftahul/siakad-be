@@ -2,6 +2,7 @@ package com.siakad.periode.controller;
 
 import com.siakad.common.response.ApiResponse;
 import com.siakad.common.response.Pagination;
+import com.siakad.periode.dto.PeriodeOptionResponse;
 import com.siakad.periode.dto.PeriodeRequest;
 import com.siakad.periode.dto.PeriodeResponse;
 import com.siakad.periode.service.PeriodeService;
@@ -48,6 +49,12 @@ public class PeriodeController {
     @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
     public ResponseEntity<ApiResponse<PeriodeResponse>> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(periodeService.getById(id)));
+    }
+
+    @GetMapping("/options")
+    @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
+    public ResponseEntity<ApiResponse<List<PeriodeOptionResponse>>> options() {
+        return ResponseEntity.ok(ApiResponse.success(periodeService.options()));
     }
 
     @GetMapping

@@ -4,11 +4,15 @@ import com.siakad.auth.security.UserPrincipal;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.exception.BusinessRuleViolationException;
 import com.siakad.common.exception.ResourceNotFoundException;
+import com.siakad.periode.dto.PeriodeOptionResponse;
 import com.siakad.periode.dto.PeriodeRequest;
 import com.siakad.periode.dto.PeriodeResponse;
 import com.siakad.periode.entity.PeriodeEntity;
 import com.siakad.periode.repository.PeriodeRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -41,6 +45,13 @@ public class PeriodeService {
     @Transactional(readOnly = true)
     public PeriodeResponse getById(Integer id) {
         return PeriodeResponse.from(findOrThrow(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PeriodeOptionResponse> options() {
+        return periodeRepository.findByJenjangOrderByNamaAsc(currentJenjang()).stream()
+                .map(PeriodeOptionResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)

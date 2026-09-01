@@ -26,5 +26,4 @@ public class GuruController {
     public ResponseEntity<ApiResponse<List<GuruOptionResponse>>> options() {
         return ResponseEntity.ok(ApiResponse.success(guruService.options()));
     }
-
 }
