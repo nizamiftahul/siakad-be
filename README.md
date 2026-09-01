@@ -35,7 +35,8 @@ docker/
 ```
 
 Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD), manajemen periode (CRUD),
-opsi kelas (scoped by jenjang), manajemen kelas grup (CRUD), dan Swagger/OpenAPI documentation.
+opsi kelas (scoped by jenjang), manajemen kelas grup (CRUD), opsi periode, manajemen guru (CRUD),
+dan Swagger/OpenAPI documentation.
 
 ---
 
@@ -94,9 +95,19 @@ mvn spring-boot:run
 
 - `GET /api/periode` — daftar periode (dengan pagination, filter by nama/status, dibatasi jenjang dari session)
 - `GET /api/periode/{id}` — detail periode berdasarkan ID
+- `GET /api/periode/options` — daftar opsi periode (untuk dropdown/select)
 - `POST /api/periode` — buat periode baru
 - `PUT /api/periode/{id}` — update data periode
 - `DELETE /api/periode/{id}` — hapus periode
+
+### Guru (`/api/guru`)
+
+- `GET /api/guru` — daftar guru (dengan pagination, filter by nama/nip/status, dibatasi jenjang dari session)
+- `GET /api/guru/{id}` — detail guru berdasarkan ID
+- `GET /api/guru/options` — daftar opsi guru (untuk dropdown/select), dibatasi jenjang dari session
+- `POST /api/guru` — buat guru baru (validasi keunikan NIP per jenjang)
+- `PUT /api/guru/{id}` — update data guru
+- `DELETE /api/guru/{id}` — hapus guru
 
 ### Kelas (`/api/kelas`)
 
