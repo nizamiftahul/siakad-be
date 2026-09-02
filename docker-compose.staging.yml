@@ -1,4 +1,6 @@
-# Staging stack: app (built from source) + Postgres.
+# Staging stack: app (built from source) + Postgres (custom image with init SQL baked in,
+# so no host bind mount is needed — safe for Portainer hosts where the stack directory /
+# filesystem is read-only or the stack wasn't deployed via a Git-linked repo).
 #
 # Variabel di bawah ($DB_PASSWORD, $JWT_SECRET, dst) di-resolve oleh Docker Compose itu sendiri
 # saat parsing file ini (dari .env di direktori yang sama, atau dari environment variable proses/
@@ -31,7 +33,9 @@ services:
       - siakad-staging
 
   postgres:
-    image: postgres:16-alpine
+    build:
+      context: ./docker
+      dockerfile: postgres.Dockerfile
     container_name: siakad-postgres-staging
     restart: unless-stopped
     environment:
@@ -40,7 +44,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-siakad}
     volumes:
       - siakad_staging_pgdata:/var/lib/postgresql/data
-      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
