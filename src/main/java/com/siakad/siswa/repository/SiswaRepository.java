@@ -34,4 +34,7 @@ public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
     Optional<SiswaEntity> findByIdAndJenjang(Integer id, Jenjang jenjang);
 
     List<SiswaEntity> findByJenjangOrderByNamaAsc(Jenjang jenjang);
+
+    @Query("SELECT s.id FROM SiswaEntity s WHERE s.id IN :ids AND s.jenjang = :jenjang")
+    List<Integer> findExistingIds(@Param("ids") List<Integer> ids, @Param("jenjang") Jenjang jenjang);
 }

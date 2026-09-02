@@ -28,14 +28,15 @@ src/main/java/com/siakad/
 
 src/main/resources/
 ├── application.yml            # konfigurasi aplikasi
-└── db/migration/              # skrip migrasi Flyway (saat ini kosong, lihat catatan skema di bawah)
+└── db/migration/              # skrip migrasi Flyway (lihat catatan skema di bawah)
 
 docker/
 └── initdb/01-schema.sql       # skema database awal (auto-dijalankan Postgres saat volume baru dibuat)
 ```
 
-Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD), manajemen periode (CRUD),
-opsi kelas (scoped by jenjang), manajemen kelas grup (CRUD), opsi periode, manajemen guru (CRUD),
+Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD + opsi), manajemen periode
+(CRUD + opsi), opsi kelas (scoped by jenjang), manajemen kelas grup (CRUD + opsi), manajemen guru
+(CRUD + opsi, keunikan NIP per jenjang), manajemen kelas siswa/enrollment (CRUD + batch insert),
 dan Swagger/OpenAPI documentation.
 
 ---
@@ -87,6 +88,7 @@ mvn spring-boot:run
 
 - `GET /api/siswa` — daftar siswa (dengan pagination, filter by jenjang dari session)
 - `GET /api/siswa/{id}` — detail siswa berdasarkan ID
+- `GET /api/siswa/options` — daftar opsi siswa (untuk dropdown/select), dibatasi jenjang dari session
 - `POST /api/siswa` — buat siswa baru
 - `PUT /api/siswa/{id}` — update data siswa
 - `DELETE /api/siswa/{id}` — hapus siswa
@@ -117,9 +119,22 @@ mvn spring-boot:run
 
 - `GET /api/kelas-grup` — daftar kelas grup (dengan pagination, filter by nama/periodeId, dibatasi jenjang dari session lewat `kelasId`)
 - `GET /api/kelas-grup/{id}` — detail kelas grup berdasarkan ID
-- `POST /api/kelas-grup` — buat kelas grup baru (validasi referensi `kelasId`/`periodeId`/`waliKelasId` ke jenjang session, serta keunikan nama & wali kelas per periode)
+- `GET /api/kelas-grup/options` — daftar opsi kelas grup (untuk dropdown/select), dibatasi jenjang dari session
+- `POST /api/kelas-grup` — buat kelas grup baru (validasi referensi `kelasId`/`periodeId`/`waliKelasId` ke jenjang session)
 - `PUT /api/kelas-grup/{id}` — update data kelas grup
 - `DELETE /api/kelas-grup/{id}` — hapus kelas grup
+
+### Kelas Siswa (`/api/kelas-siswa`)
+
+Merepresentasikan pendaftaran (enrollment) seorang siswa ke sebuah kelas grup pada suatu periode,
+lengkap dengan SPP per siswa.
+
+- `GET /api/kelas-siswa` — daftar kelas siswa (dengan pagination, filter by `kelasGrupId`/`siswaId`/`periodeId`, dibatasi jenjang dari session)
+- `GET /api/kelas-siswa/{id}` — detail kelas siswa berdasarkan ID
+- `POST /api/kelas-siswa` — daftarkan satu siswa ke satu kelas grup (validasi referensi `siswaId`/`kelasGrupId` ke jenjang session, serta aturan satu siswa hanya boleh terdaftar di satu kelas grup per periode)
+- `POST /api/kelas-siswa/batch` — daftarkan banyak siswa sekaligus ke satu kelas grup (`kelasGrupId` + list `siswaId`; `spp` diambil dari `KelasGrup.defaultSpp`; all-or-nothing — jika satu siswa gagal validasi, seluruh batch dibatalkan)
+- `PUT /api/kelas-siswa/{id}` — update data kelas siswa (mis. pindah kelas grup, ubah SPP/potongan)
+- `DELETE /api/kelas-siswa/{id}` — hapus kelas siswa
 
 ---
 
@@ -137,9 +152,14 @@ di-restore dari `docker/initdb/01-schema.sql`, yang otomatis dijalankan Postgres
   ⚠️ Perintah ini menghapus seluruh data di volume `siakad_pgdata`.
 - Flyway tetap aktif (`spring.jpa.hibernate.ddl-auto: validate`) untuk mengelola perubahan skema
   _setelah_ skema awal ini — tambahkan migrasi baru di `src/main/resources/db/migration/`
-  dengan penamaan `V<n>__deskripsi.sql`. Migrasi yang sudah ada: `V2__create_refresh_token_table.sql`
-  (tabel `RefreshToken` untuk JWT refresh flow) dan `V3__seed_default_admin_user.sql` (seed user admin
-  default).
+  dengan penamaan `V<n>__deskripsi.sql`. Migrasi yang sudah ada:
+  - `V2__create_refresh_token_table.sql` — tabel `RefreshToken` untuk JWT refresh flow
+  - `V3__seed_default_admin_user.sql` — seed user admin default
+  - `V4__make_kelasgrup_walikelasid_nullable.sql` — `KelasGrup.waliKelasId` jadi nullable
+  - `V5__drop_kelasgrup_walikelasid_periodeid_unique.sql` — drop unique constraint lama pada `(waliKelasId, periodeId)`
+  - `V6__change_guru_nip_unique_to_per_jenjang.sql` — keunikan NIP guru jadi per jenjang (bukan global)
+  - `V7__drop_trigger_set_timestamp_on_update.sql` — drop trigger auto-update `updatedAt` (digantikan `@UpdateTimestamp` di layer aplikasi)
+  - `V8__add_kelassiswa_siswaid_kelasgrupid_unique.sql` — unique constraint pada `KelasSiswa("siswaId", "kelasGrupId")`
 
 ---
 
