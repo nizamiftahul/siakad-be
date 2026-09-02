@@ -1,0 +1,56 @@
+# Staging stack: app (built from source) + Postgres.
+#
+# Variabel di bawah ($DB_PASSWORD, $JWT_SECRET, dst) di-resolve oleh Docker Compose itu sendiri
+# saat parsing file ini (dari .env di direktori yang sama, atau dari environment variable proses/
+# Portainer stack env) — ini terpisah dari mekanisme ${VAR:default} di application.yml yang
+# di-resolve oleh Spring Boot saat container `app` berjalan. Variabel wajib (tanpa default,
+# pakai syntax ${VAR:?pesan error}) akan membuat `docker compose up` gagal kalau belum diisi,
+# supaya staging tidak pernah jalan diam-diam dengan password/secret default development.
+#
+# Jalankan: docker compose -f docker-compose.staging.yml up -d --build
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: siakad-be-staging
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-siakad}
+      DB_USERNAME: ${POSTGRES_USER:-siakad}
+      DB_PASSWORD: ${DB_PASSWORD:-siakad}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      JWT_SECRET: ${JWT_SECRET:-JWTSECRETTOKENSTAGINGSECUREKEYDONOTSHAREANYWHERE}
+    ports:
+      - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
+    networks:
+      - siakad-staging
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: siakad-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-siakad}
+      POSTGRES_USER: ${POSTGRES_USER:-siakad}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-siakad}
+    volumes:
+      - siakad_staging_pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - siakad-staging
+
+networks:
+  siakad-staging:
+
+volumes:
+  siakad_staging_pgdata:
