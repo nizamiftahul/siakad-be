@@ -1,6 +1,6 @@
 package com.siakad.siswa.service;
 
-import com.siakad.auth.security.UserPrincipal;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.enums.SiswaStatus;
 import com.siakad.common.exception.DuplicateResourceException;
@@ -13,8 +13,6 @@ import com.siakad.siswa.repository.SiswaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +24,14 @@ import java.util.List;
 public class SiswaService {
 
     private final SiswaRepository siswaRepository;
+    private final CurrentUserContext currentUser;
 
     public SiswaResponse create(SiswaRequest request) {
-        Jenjang jenjang = currentJenjang();
+        Jenjang jenjang = currentUser.jenjang();
         if (siswaRepository.existsByNisAndJenjang(request.nis(), jenjang)) {
             throw new DuplicateResourceException("NIS sudah terdaftar pada jenjang tersebut");
         }
-        String actor = currentUsername();
+        String actor = currentUser.username();
         SiswaEntity entity = toEntity(request, new SiswaEntity());
         entity.setJenjang(jenjang);
         entity.setStatus(request.status() != null ? request.status() : SiswaStatus.Aktif);
@@ -48,13 +47,13 @@ public class SiswaService {
 
     @Transactional(readOnly = true)
     public Page<SiswaResponse> list(String nama, String nis, SiswaStatus status, Pageable pageable) {
-        return siswaRepository.search(nama, nis, status, currentJenjang(), pageable)
+        return siswaRepository.search(nama, nis, status, currentUser.jenjang(), pageable)
                 .map(SiswaResponse::from);
     }
 
     @Transactional(readOnly = true)
     public List<SiswaOptionResponse> options() {
-        return siswaRepository.findByJenjangOrderByNamaAsc(currentJenjang()).stream()
+        return siswaRepository.findByJenjangOrderByNamaAsc(currentUser.jenjang()).stream()
                 .map(SiswaOptionResponse::from)
                 .toList();
     }
@@ -70,7 +69,7 @@ public class SiswaService {
         if (request.status() != null) {
             entity.setStatus(request.status());
         }
-        entity.setUpdatedBy(currentUsername());
+        entity.setUpdatedBy(currentUser.username());
         return SiswaResponse.from(siswaRepository.save(entity));
     }
 
@@ -80,7 +79,7 @@ public class SiswaService {
     }
 
     private SiswaEntity findOrThrow(Integer id) {
-        return siswaRepository.findByIdAndJenjang(id, currentJenjang())
+        return siswaRepository.findByIdAndJenjang(id, currentUser.jenjang())
                 .orElseThrow(() -> new ResourceNotFoundException("Siswa dengan id " + id + " tidak ditemukan"));
     }
 
@@ -113,25 +112,5 @@ public class SiswaService {
         entity.setPendidikanWali(r.pendidikanWali());
         entity.setGajiWali(r.gajiWali());
         return entity;
-    }
-
-    private String currentUsername() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            return "system";
-        }
-        return principal.getUsername();
-    }
-
-    private Jenjang currentJenjang() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            throw new AccessDeniedException("Akses ditolak: sesi tidak valid");
-        }
-        Jenjang jenjang = principal.getJenjang();
-        if (jenjang == null) {
-            throw new AccessDeniedException("Akun tidak memiliki jenjang");
-        }
-        return jenjang;
     }
 }

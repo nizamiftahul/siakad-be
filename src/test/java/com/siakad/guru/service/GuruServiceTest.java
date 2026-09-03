@@ -1,6 +1,7 @@
 package com.siakad.guru.service;
 
 import com.siakad.auth.entity.UserEntity;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.auth.security.UserPrincipal;
 import com.siakad.common.enums.GuruStatus;
 import com.siakad.common.enums.Jenjang;
@@ -41,7 +42,7 @@ class GuruServiceTest {
 
     @BeforeEach
     void setUp() {
-        guruService = new GuruService(guruRepository);
+        guruService = new GuruService(guruRepository, new CurrentUserContext());
     }
 
     @AfterEach

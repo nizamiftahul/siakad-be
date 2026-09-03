@@ -1,6 +1,6 @@
 package com.siakad.kelasgrup.service;
 
-import com.siakad.auth.security.UserPrincipal;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.exception.DuplicateResourceException;
 import com.siakad.common.exception.ResourceNotFoundException;
@@ -15,8 +15,6 @@ import com.siakad.periode.repository.PeriodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,13 +30,14 @@ public class KelasGrupService {
     private final KelasRepository kelasRepository;
     private final PeriodeRepository periodeRepository;
     private final GuruRepository guruRepository;
+    private final CurrentUserContext currentUser;
 
     public KelasGrupResponse create(KelasGrupRequest request) {
-        Jenjang jenjang = currentJenjang();
+        Jenjang jenjang = currentUser.jenjang();
         validateReferences(request.kelasId(), request.periodeId(), request.waliKelasId(), jenjang);
         validateUnique(request.nama(), request.periodeId(), request.waliKelasId(), null);
 
-        String actor = currentUsername();
+        String actor = currentUser.username();
         KelasGrupEntity entity = toEntity(request, new KelasGrupEntity());
         entity.setCreatedBy(actor);
         entity.setUpdatedBy(actor);
@@ -52,25 +51,25 @@ public class KelasGrupService {
 
     @Transactional(readOnly = true)
     public Page<KelasGrupResponse> list(String nama, Integer periodeId, Pageable pageable) {
-        return kelasGrupRepository.search(nama, periodeId, currentJenjang(), pageable)
+        return kelasGrupRepository.search(nama, periodeId, currentUser.jenjang(), pageable)
                 .map(KelasGrupResponse::from);
     }
 
     @Transactional(readOnly = true)
     public List<KelasGrupOptionResponse> options(Integer periodeId) {
-        return kelasGrupRepository.findOptions(periodeId, currentJenjang()).stream()
+        return kelasGrupRepository.findOptions(periodeId, currentUser.jenjang()).stream()
                 .map(KelasGrupOptionResponse::from)
                 .toList();
     }
 
     public KelasGrupResponse update(Integer id, KelasGrupRequest request) {
         KelasGrupEntity entity = findOrThrow(id);
-        Jenjang jenjang = currentJenjang();
+        Jenjang jenjang = currentUser.jenjang();
         validateReferences(request.kelasId(), request.periodeId(), request.waliKelasId(), jenjang);
         validateUnique(request.nama(), request.periodeId(), request.waliKelasId(), id);
 
         toEntity(request, entity);
-        entity.setUpdatedBy(currentUsername());
+        entity.setUpdatedBy(currentUser.username());
         return KelasGrupResponse.from(kelasGrupRepository.save(entity));
     }
 
@@ -80,7 +79,7 @@ public class KelasGrupService {
     }
 
     private KelasGrupEntity findOrThrow(Integer id) {
-        return kelasGrupRepository.findByIdAndJenjang(id, currentJenjang())
+        return kelasGrupRepository.findByIdAndJenjang(id, currentUser.jenjang())
                 .orElseThrow(() -> new ResourceNotFoundException("KelasGrup dengan id " + id + " tidak ditemukan"));
     }
 
@@ -124,25 +123,5 @@ public class KelasGrupService {
         entity.setDefaultSpp(r.defaultSpp() != null ? r.defaultSpp() : BigDecimal.ZERO);
         entity.setIcp(r.icp() != null ? r.icp() : Boolean.FALSE);
         return entity;
-    }
-
-    private String currentUsername() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            return "system";
-        }
-        return principal.getUsername();
-    }
-
-    private Jenjang currentJenjang() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            throw new AccessDeniedException("Akses ditolak: sesi tidak valid");
-        }
-        Jenjang jenjang = principal.getJenjang();
-        if (jenjang == null) {
-            throw new AccessDeniedException("Akun tidak memiliki jenjang");
-        }
-        return jenjang;
     }
 }

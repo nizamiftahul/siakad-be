@@ -1,6 +1,7 @@
 package com.siakad.kelasgrup.service;
 
 import com.siakad.auth.entity.UserEntity;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.auth.security.UserPrincipal;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.enums.Role;
@@ -8,7 +9,6 @@ import com.siakad.common.exception.DuplicateResourceException;
 import com.siakad.common.exception.ResourceNotFoundException;
 import com.siakad.guru.repository.GuruRepository;
 import com.siakad.kelas.repository.KelasRepository;
-import com.siakad.kelasgrup.dto.KelasGrupOptionResponse;
 
 import com.siakad.kelasgrup.dto.KelasGrupRequest;
 
@@ -58,7 +58,8 @@ class KelasGrupServiceTest {
 
     @BeforeEach
     void setUp() {
-        kelasGrupService = new KelasGrupService(kelasGrupRepository, kelasRepository, periodeRepository, guruRepository);
+        kelasGrupService = new KelasGrupService(kelasGrupRepository, kelasRepository, periodeRepository, guruRepository,
+                new CurrentUserContext());
     }
 
     @AfterEach

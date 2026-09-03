@@ -1,6 +1,6 @@
 package com.siakad.kelassiswa.service;
 
-import com.siakad.auth.security.UserPrincipal;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.exception.DuplicateResourceException;
 import com.siakad.common.exception.ResourceNotFoundException;
@@ -15,8 +15,6 @@ import com.siakad.siswa.repository.SiswaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,13 +30,14 @@ public class KelasSiswaService {
     private final KelasSiswaRepository kelasSiswaRepository;
     private final SiswaRepository siswaRepository;
     private final KelasGrupRepository kelasGrupRepository;
+    private final CurrentUserContext currentUser;
 
     public KelasSiswaResponse create(KelasSiswaRequest request) {
-        Jenjang jenjang = currentJenjang();
+        Jenjang jenjang = currentUser.jenjang();
         KelasGrupEntity kelasGrup = validateReferences(request.siswaId(), request.kelasGrupId(), jenjang);
         validateUniqueEnrollment(request.siswaId(), kelasGrup.getPeriodeId(), null);
 
-        String actor = currentUsername();
+        String actor = currentUser.username();
         KelasSiswaEntity entity = toEntity(request, new KelasSiswaEntity());
         entity.setCreatedBy(actor);
         entity.setUpdatedBy(actor);
@@ -52,18 +51,18 @@ public class KelasSiswaService {
 
     @Transactional(readOnly = true)
     public Page<KelasSiswaResponse> list(Integer kelasGrupId, Integer siswaId, Integer periodeId, Pageable pageable) {
-        return kelasSiswaRepository.search(kelasGrupId, siswaId, periodeId, currentJenjang(), pageable)
+        return kelasSiswaRepository.search(kelasGrupId, siswaId, periodeId, currentUser.jenjang(), pageable)
                 .map(KelasSiswaResponse::from);
     }
 
     public KelasSiswaResponse update(Integer id, KelasSiswaRequest request) {
         KelasSiswaEntity entity = findOrThrow(id);
-        Jenjang jenjang = currentJenjang();
+        Jenjang jenjang = currentUser.jenjang();
         KelasGrupEntity kelasGrup = validateReferences(request.siswaId(), request.kelasGrupId(), jenjang);
         validateUniqueEnrollment(request.siswaId(), kelasGrup.getPeriodeId(), id);
 
         toEntity(request, entity);
-        entity.setUpdatedBy(currentUsername());
+        entity.setUpdatedBy(currentUser.username());
         return KelasSiswaResponse.from(kelasSiswaRepository.save(entity));
     }
 
@@ -73,7 +72,7 @@ public class KelasSiswaService {
     }
 
     public List<KelasSiswaResponse> createBatch(KelasSiswaBatchRequest request) {
-        Jenjang jenjang = currentJenjang();
+        Jenjang jenjang = currentUser.jenjang();
 
         List<Integer> requestedIds = request.siswaIds();
         List<Integer> duplicateInRequest = requestedIds.stream()
@@ -103,7 +102,7 @@ public class KelasSiswaService {
                     "Siswa dengan id berikut sudah terdaftar di kelas grup lain pada periode ini: " + alreadyEnrolledIds);
         }
 
-        String actor = currentUsername();
+        String actor = currentUser.username();
         List<KelasSiswaEntity> entities = requestedIds.stream()
                 .map(siswaId -> KelasSiswaEntity.builder()
                         .siswaId(siswaId)
@@ -121,7 +120,7 @@ public class KelasSiswaService {
     }
 
     private KelasSiswaEntity findOrThrow(Integer id) {
-        return kelasSiswaRepository.findByIdAndJenjang(id, currentJenjang())
+        return kelasSiswaRepository.findByIdAndJenjang(id, currentUser.jenjang())
                 .orElseThrow(() -> new ResourceNotFoundException("KelasSiswa dengan id " + id + " tidak ditemukan"));
     }
 
@@ -146,25 +145,5 @@ public class KelasSiswaService {
         entity.setSpp(r.spp());
         entity.setPotonganSpp(r.potonganSpp() != null ? r.potonganSpp() : BigDecimal.ZERO);
         return entity;
-    }
-
-    private String currentUsername() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            return "system";
-        }
-        return principal.getUsername();
-    }
-
-    private Jenjang currentJenjang() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            throw new AccessDeniedException("Akses ditolak: sesi tidak valid");
-        }
-        Jenjang jenjang = principal.getJenjang();
-        if (jenjang == null) {
-            throw new AccessDeniedException("Akun tidak memiliki jenjang");
-        }
-        return jenjang;
     }
 }

@@ -53,7 +53,7 @@ public class JenisPembayaranEntity {
     @Column(name = "jenjang", nullable = false, columnDefinition = "\"Jenjang\"")
     private Jenjang jenjang;
 
-    @Column(name = "\"kodePembayaran\"", length = 3)
+    @Column(name = "\"kodePembayaran\"", columnDefinition = "bpchar(3)")
     private String kodePembayaran;
 
     @Column(name = "\"order\"")

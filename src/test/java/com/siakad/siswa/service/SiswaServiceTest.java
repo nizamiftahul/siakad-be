@@ -1,6 +1,7 @@
 package com.siakad.siswa.service;
 
 import com.siakad.auth.entity.UserEntity;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.auth.security.UserPrincipal;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.enums.Role;
@@ -43,7 +44,7 @@ class SiswaServiceTest {
 
     @BeforeEach
     void setUp() {
-        siswaService = new SiswaService(siswaRepository);
+        siswaService = new SiswaService(siswaRepository, new CurrentUserContext());
     }
 
     @AfterEach

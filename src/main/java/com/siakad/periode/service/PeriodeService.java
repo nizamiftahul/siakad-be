@@ -1,6 +1,6 @@
 package com.siakad.periode.service;
 
-import com.siakad.auth.security.UserPrincipal;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.exception.BusinessRuleViolationException;
 import com.siakad.common.exception.ResourceNotFoundException;
@@ -15,8 +15,6 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,10 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class PeriodeService {
 
     private final PeriodeRepository periodeRepository;
+    private final CurrentUserContext currentUser;
 
     public PeriodeResponse create(PeriodeRequest request) {
-        Jenjang jenjang = currentJenjang();
-        String actor = currentUsername();
+        Jenjang jenjang = currentUser.jenjang();
+        String actor = currentUser.username();
         PeriodeEntity entity = toEntity(request, new PeriodeEntity());
         entity.setJenjang(jenjang);
         boolean status = request.status() != null && request.status();
@@ -49,14 +48,14 @@ public class PeriodeService {
 
     @Transactional(readOnly = true)
     public List<PeriodeOptionResponse> options() {
-        return periodeRepository.findByJenjangOrderByNamaAsc(currentJenjang()).stream()
+        return periodeRepository.findByJenjangOrderByNamaAsc(currentUser.jenjang()).stream()
                 .map(PeriodeOptionResponse::from)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<PeriodeResponse> list(String nama, Boolean status, Pageable pageable) {
-        return periodeRepository.search(nama, status, currentJenjang(), pageable)
+        return periodeRepository.search(nama, status, currentUser.jenjang(), pageable)
                 .map(PeriodeResponse::from);
     }
 
@@ -76,7 +75,7 @@ public class PeriodeService {
                             + jenjang);
         }
 
-        entity.setUpdatedBy(currentUsername());
+        entity.setUpdatedBy(currentUser.username());
         return PeriodeResponse.from(periodeRepository.save(entity));
     }
 
@@ -91,7 +90,7 @@ public class PeriodeService {
     }
 
     private PeriodeEntity findOrThrow(Integer id) {
-        return periodeRepository.findByIdAndJenjang(id, currentJenjang())
+        return periodeRepository.findByIdAndJenjang(id, currentUser.jenjang())
                 .orElseThrow(() -> new ResourceNotFoundException("Periode dengan id " + id + " tidak ditemukan"));
     }
 
@@ -101,26 +100,6 @@ public class PeriodeService {
         entity.setTglMulai(r.tglMulai());
         entity.setTglSelesai(r.tglSelesai());
         return entity;
-    }
-
-    private String currentUsername() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            return "system";
-        }
-        return principal.getUsername();
-    }
-
-    private Jenjang currentJenjang() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            throw new AccessDeniedException("Akses ditolak: sesi tidak valid");
-        }
-        Jenjang jenjang = principal.getJenjang();
-        if (jenjang == null) {
-            throw new AccessDeniedException("Akun tidak memiliki jenjang");
-        }
-        return jenjang;
     }
 
     private void deactivateOtherActivePeriods(Jenjang jenjang) {

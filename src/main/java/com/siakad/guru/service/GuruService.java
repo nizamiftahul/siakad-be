@@ -1,6 +1,6 @@
 package com.siakad.guru.service;
 
-import com.siakad.auth.security.UserPrincipal;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.common.enums.GuruStatus;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.exception.DuplicateResourceException;
@@ -13,8 +13,6 @@ import com.siakad.guru.repository.GuruRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +24,14 @@ import java.util.List;
 public class GuruService {
 
     private final GuruRepository guruRepository;
+    private final CurrentUserContext currentUser;
 
     public GuruResponse create(GuruRequest request) {
-        Jenjang jenjang = currentJenjang();
+        Jenjang jenjang = currentUser.jenjang();
         if (guruRepository.existsByNipAndJenjang(request.nip(), jenjang)) {
             throw new DuplicateResourceException("NIP sudah terdaftar");
         }
-        String actor = currentUsername();
+        String actor = currentUser.username();
         GuruEntity entity = toEntity(request, new GuruEntity());
         entity.setJenjang(jenjang);
         entity.setStatus(request.status() != null ? request.status() : GuruStatus.Aktif);
@@ -48,14 +47,14 @@ public class GuruService {
 
     @Transactional(readOnly = true)
     public List<GuruOptionResponse> options() {
-        return guruRepository.findByJenjangOrderByNamaAsc(currentJenjang()).stream()
+        return guruRepository.findByJenjangOrderByNamaAsc(currentUser.jenjang()).stream()
                 .map(GuruOptionResponse::from)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<GuruResponse> list(String nama, String nip, GuruStatus status, Pageable pageable) {
-        return guruRepository.search(nama, nip, status, currentJenjang(), pageable)
+        return guruRepository.search(nama, nip, status, currentUser.jenjang(), pageable)
                 .map(GuruResponse::from);
     }
 
@@ -70,7 +69,7 @@ public class GuruService {
         if (request.status() != null) {
             entity.setStatus(request.status());
         }
-        entity.setUpdatedBy(currentUsername());
+        entity.setUpdatedBy(currentUser.username());
         return GuruResponse.from(guruRepository.save(entity));
     }
 
@@ -80,7 +79,7 @@ public class GuruService {
     }
 
     private GuruEntity findOrThrow(Integer id) {
-        return guruRepository.findByIdAndJenjang(id, currentJenjang())
+        return guruRepository.findByIdAndJenjang(id, currentUser.jenjang())
                 .orElseThrow(() -> new ResourceNotFoundException("Guru dengan id " + id + " tidak ditemukan"));
     }
 
@@ -97,25 +96,5 @@ public class GuruService {
         entity.setTmptLahir(r.tmptLahir());
         entity.setJabatan(r.jabatan());
         return entity;
-    }
-
-    private String currentUsername() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            return "system";
-        }
-        return principal.getUsername();
-    }
-
-    private Jenjang currentJenjang() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
-            throw new AccessDeniedException("Akses ditolak: sesi tidak valid");
-        }
-        Jenjang jenjang = principal.getJenjang();
-        if (jenjang == null) {
-            throw new AccessDeniedException("Akun tidak memiliki jenjang");
-        }
-        return jenjang;
     }
 }
