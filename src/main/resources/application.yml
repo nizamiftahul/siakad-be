@@ -24,6 +24,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework   # percayai X-Forwarded-Proto dari reverse proxy agar URL (termasuk Swagger) memakai https
 
 app:
   jwt:
