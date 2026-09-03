@@ -26,7 +26,7 @@ public interface KelasGrupRepository extends JpaRepository<KelasGrupEntity, Inte
 
     @Query("""
         SELECT kg FROM KelasGrupEntity kg
-        WHERE (:nama IS NULL OR LOWER(kg.nama) LIKE LOWER(CONCAT('%', :nama, '%')))
+        WHERE (:nama IS NULL OR LOWER(kg.nama) LIKE LOWER(CONCAT('%', CAST(:nama AS string), '%')))
           AND (:periodeId IS NULL OR kg.periodeId = :periodeId)
           AND kg.kelasId IN (SELECT k.id FROM KelasEntity k WHERE k.jenjang = :jenjang)
         """)

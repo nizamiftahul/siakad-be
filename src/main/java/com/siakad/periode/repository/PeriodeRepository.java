@@ -15,7 +15,7 @@ public interface PeriodeRepository extends JpaRepository<PeriodeEntity, Integer>
 
   @Query("""
       SELECT p FROM PeriodeEntity p
-      WHERE (:nama IS NULL OR LOWER(p.nama) LIKE LOWER(CONCAT('%', :nama, '%')))
+      WHERE (:nama IS NULL OR LOWER(p.nama) LIKE LOWER(CONCAT('%', CAST(:nama AS string), '%')))
         AND (:status IS NULL OR p.status = :status)
         AND p.jenjang = :jenjang
       """)
