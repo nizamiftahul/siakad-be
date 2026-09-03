@@ -9,4 +9,6 @@ import java.util.List;
 public interface JenisPembayaranRepository extends JpaRepository<JenisPembayaranEntity, Integer> {
 
     List<JenisPembayaranEntity> findByJenjangOrderByJenisAsc(Jenjang jenjang);
+
+    boolean existsByIdAndJenjang(Integer id, Jenjang jenjang);
 }
