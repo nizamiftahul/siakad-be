@@ -18,8 +18,8 @@ public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
             SELECT s FROM SiswaEntity s
             WHERE (:nama IS NULL OR LOWER(s.nama) LIKE LOWER(CONCAT('%', CAST(:nama AS string), '%')))
               AND (:nis IS NULL OR s.nis = :nis)
-              AND (:status IS NULL OR s.status = :status)
-              AND (:jenjang IS NULL OR s.jenjang = :jenjang)
+              AND (CAST(:status AS string) IS NULL OR s.status = :status)
+              AND (CAST(:jenjang AS string) IS NULL OR s.jenjang = :jenjang)
             """)
     Page<SiswaEntity> search(@Param("nama") String nama,
                               @Param("nis") String nis,

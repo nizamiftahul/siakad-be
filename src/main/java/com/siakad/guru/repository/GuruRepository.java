@@ -23,7 +23,7 @@ public interface GuruRepository extends JpaRepository<GuruEntity, Integer> {
             SELECT g FROM GuruEntity g
             WHERE (:nama IS NULL OR LOWER(g.nama) LIKE LOWER(CONCAT('%', CAST(:nama AS string), '%')))
               AND (:nip IS NULL OR g.nip = :nip)
-              AND (:status IS NULL OR g.status = :status)
+              AND (CAST(:status AS string) IS NULL OR g.status = :status)
               AND g.jenjang = :jenjang
             """)
     Page<GuruEntity> search(@Param("nama") String nama,
