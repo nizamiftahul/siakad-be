@@ -104,7 +104,8 @@ class SiswaControllerTest {
                 null, // gajiWali
                 Jenjang.SD, // jenjang
                 "admin", // createdBy
-                "admin" // updatedBy
+                "admin", // updatedBy
+                null // namaKelas
         );
     }
 
