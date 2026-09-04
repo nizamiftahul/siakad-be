@@ -39,7 +39,7 @@ menyertakan nama kelas dari periode aktif), manajemen periode (CRUD + opsi), ops
 jenjang), manajemen kelas grup (CRUD + opsi), manajemen guru (CRUD + opsi, keunikan NIP per jenjang),
 manajemen kelas siswa/enrollment (CRUD + batch insert), opsi jenis pembayaran, manajemen deposito
 (CRUD, keunikan `siswaId` + `jenisPembayaranId`), manajemen pembayaran SPP (CRUD, filter by siswa
-dan periode), dan Swagger/OpenAPI documentation.
+dan periode), manajemen user Admin/KSatu (CRUD), dan Swagger/OpenAPI documentation.
 
 ---
 
@@ -85,6 +85,16 @@ mvn spring-boot:run
 - `POST /api/auth/login` — login dengan email dan password, mengembalikan access token & refresh token
 - `POST /api/auth/refresh` — refresh access token menggunakan refresh token
 - `POST /api/auth/logout` — logout dan invalidate refresh token
+
+### User (`/api/user`)
+
+Mengelola akun level administratif (`Admin` dan `KSatu`) — bukan akun `Guru`/`Siswa`.
+
+- `GET /api/user` — daftar user Admin/KSatu (dengan pagination, filter opsional `name`/`role`, dibatasi jenjang dari session)
+- `GET /api/user/{id}` — detail user berdasarkan ID
+- `POST /api/user` — buat user Admin/KSatu baru (password wajib diisi, di-hash dengan BCrypt)
+- `PUT /api/user/{id}` — update data user (password opsional, kosongkan untuk mempertahankan password lama)
+- `DELETE /api/user/{id}` — hapus user (ditolak jika menghapus akun sendiri)
 
 ### Siswa (`/api/siswa`)
 
