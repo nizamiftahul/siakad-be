@@ -34,10 +34,11 @@ docker/
 └── initdb/01-schema.sql       # skema database awal (auto-dijalankan Postgres saat volume baru dibuat)
 ```
 
-Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD + opsi), manajemen periode
-(CRUD + opsi), opsi kelas (scoped by jenjang), manajemen kelas grup (CRUD + opsi), manajemen guru
-(CRUD + opsi, keunikan NIP per jenjang), manajemen kelas siswa/enrollment (CRUD + batch insert),
-dan Swagger/OpenAPI documentation.
+Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD + opsi, hasil pencarian
+menyertakan nama kelas dari periode aktif), manajemen periode (CRUD + opsi), opsi kelas (scoped by
+jenjang), manajemen kelas grup (CRUD + opsi), manajemen guru (CRUD + opsi, keunikan NIP per jenjang),
+manajemen kelas siswa/enrollment (CRUD + batch insert), opsi jenis pembayaran, manajemen deposito
+(CRUD, keunikan `siswaId` + `jenisPembayaranId`), dan Swagger/OpenAPI documentation.
 
 ---
 
@@ -136,6 +137,18 @@ lengkap dengan SPP per siswa.
 - `PUT /api/kelas-siswa/{id}` — update data kelas siswa (mis. pindah kelas grup, ubah SPP/potongan)
 - `DELETE /api/kelas-siswa/{id}` — hapus kelas siswa
 
+### Jenis Pembayaran (`/api/jenis-pembayaran`)
+
+- `GET /api/jenis-pembayaran/options` — daftar opsi jenis pembayaran (untuk dropdown/select)
+
+### Deposito (`/api/deposito`)
+
+- `GET /api/deposito` — daftar deposito milik satu siswa (dengan pagination, wajib `siswaId`)
+- `GET /api/deposito/{id}` — detail deposito berdasarkan ID
+- `POST /api/deposito` — buat deposito baru (keunikan `siswaId` + `jenisPembayaranId`)
+- `PUT /api/deposito/{id}` — update data deposito
+- `DELETE /api/deposito/{id}` — hapus deposito
+
 ---
 
 ## Skema Database
@@ -160,6 +173,7 @@ di-restore dari `docker/initdb/01-schema.sql`, yang otomatis dijalankan Postgres
   - `V6__change_guru_nip_unique_to_per_jenjang.sql` — keunikan NIP guru jadi per jenjang (bukan global)
   - `V7__drop_trigger_set_timestamp_on_update.sql` — drop trigger auto-update `updatedAt` (digantikan `@UpdateTimestamp` di layer aplikasi)
   - `V8__add_kelassiswa_siswaid_kelasgrupid_unique.sql` — unique constraint pada `KelasSiswa("siswaId", "kelasGrupId")`
+  - `V9__add_deposito_createdat_and_unique_constraint.sql` — kolom `createdAt` pada `Deposito` + unique constraint `("siswaId", "jenisPembayaranId")`
 
 ---
 
