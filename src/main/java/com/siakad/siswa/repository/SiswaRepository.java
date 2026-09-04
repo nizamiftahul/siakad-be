@@ -24,6 +24,7 @@ public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
         AND (:nis IS NULL OR s.nis = :nis)
         AND (CAST(:status AS string) IS NULL OR s.status = :status)
         AND (CAST(:jenjang AS string) IS NULL OR s.jenjang = :jenjang)
+      ORDER BY s.nama
       """)
   Page<SiswaSearchRow> search(@Param("nama") String nama,
       @Param("nis") String nis,
