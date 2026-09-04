@@ -38,7 +38,8 @@ Fitur yang sudah diimplementasikan: autentikasi JWT, manajemen siswa (CRUD + ops
 menyertakan nama kelas dari periode aktif), manajemen periode (CRUD + opsi), opsi kelas (scoped by
 jenjang), manajemen kelas grup (CRUD + opsi), manajemen guru (CRUD + opsi, keunikan NIP per jenjang),
 manajemen kelas siswa/enrollment (CRUD + batch insert), opsi jenis pembayaran, manajemen deposito
-(CRUD, keunikan `siswaId` + `jenisPembayaranId`), dan Swagger/OpenAPI documentation.
+(CRUD, keunikan `siswaId` + `jenisPembayaranId`), manajemen pembayaran SPP (CRUD, filter by siswa
+dan periode), dan Swagger/OpenAPI documentation.
 
 ---
 
@@ -148,6 +149,14 @@ lengkap dengan SPP per siswa.
 - `POST /api/deposito` — buat deposito baru (keunikan `siswaId` + `jenisPembayaranId`)
 - `PUT /api/deposito/{id}` — update data deposito
 - `DELETE /api/deposito/{id}` — hapus deposito
+
+### Pembayaran SPP (`/api/pembayaran-spp`)
+
+- `GET /api/pembayaran-spp` — daftar pembayaran SPP milik satu siswa pada satu periode (dengan pagination, wajib `siswaId` dan `periodeId`)
+- `GET /api/pembayaran-spp/{id}` — detail pembayaran SPP berdasarkan ID
+- `POST /api/pembayaran-spp` — buat pembayaran SPP baru (keunikan `kelasSiswaId` + `bulan` + `tahun`; `jenisPembayaranId` otomatis diambil dari `JenisPembayaran` dengan `jenis = 'SPP'` sesuai jenjang akun, tidak diinput manual)
+- `PUT /api/pembayaran-spp/{id}` — update data pembayaran SPP
+- `DELETE /api/pembayaran-spp/{id}` — hapus pembayaran SPP
 
 ---
 
