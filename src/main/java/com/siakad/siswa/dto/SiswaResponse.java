@@ -45,9 +45,14 @@ public record SiswaResponse(
         Integer gajiWali,
         Jenjang jenjang,
         String createdBy,
-        String updatedBy) {
+        String updatedBy,
+        String namaKelas) {
 
     public static SiswaResponse from(SiswaEntity e) {
+        return from(e, null);
+    }
+
+    public static SiswaResponse from(SiswaEntity e, String namaKelas) {
         return new SiswaResponse(
                 e.getId(), e.getCreatedAt(), e.getUpdatedAt(), e.getDescription(), e.getNisn(),
                 e.getNama(), e.getEmail(), e.getJenisKelamin(), e.getAlamat(), e.getTelepon(),
@@ -56,6 +61,6 @@ public record SiswaResponse(
                 e.getPekerjaanIbu(), e.getAlamatIbu(), e.getPendidikanIbu(), e.getGajiIbu(),
                 e.getTglLahir(), e.getNis(), e.getTmptLahir(), e.getDomisili(), e.getNamaWali(),
                 e.getPekerjaanWali(), e.getAlamatWali(), e.getPendidikanWali(), e.getGajiWali(),
-                e.getJenjang(), e.getCreatedBy(), e.getUpdatedBy());
+                e.getJenjang(), e.getCreatedBy(), e.getUpdatedBy(), namaKelas);
     }
 }
