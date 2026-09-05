@@ -1,5 +1,6 @@
 package com.siakad.auth.service;
 
+import com.siakad.auth.dto.ChangePasswordRequest;
 import com.siakad.auth.dto.LoginRequest;
 import com.siakad.auth.dto.LoginResponse;
 import com.siakad.auth.dto.RefreshRequest;
@@ -8,11 +9,13 @@ import com.siakad.auth.entity.RefreshTokenEntity;
 import com.siakad.auth.entity.UserEntity;
 import com.siakad.auth.repository.RefreshTokenRepository;
 import com.siakad.auth.repository.UserRepository;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.auth.security.UserPrincipal;
 import com.siakad.common.enums.Jenjang;
 import com.siakad.common.enums.Role;
 import com.siakad.common.exception.InvalidCredentialsException;
 import com.siakad.common.exception.InvalidTokenException;
+import com.siakad.common.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +26,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -31,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,12 +46,15 @@ class AuthServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private JwtService jwtService;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private CurrentUserContext currentUser;
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(authenticationManager, userRepository, refreshTokenRepository, jwtService);
+        authService = new AuthService(authenticationManager, userRepository, refreshTokenRepository,
+                jwtService, passwordEncoder, currentUser);
     }
 
     private UserEntity user() {
@@ -158,5 +166,44 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByTokenAndRevokedFalse(anyString())).thenReturn(Optional.empty());
 
         authService.logout("unknown");
+    }
+
+    @Test
+    void changePasswordWithCorrectOldPasswordRehashesAndRevokesTokens() {
+        UserEntity user = user();
+        when(currentUser.username()).thenReturn("admin");
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("lama123!A", "hash")).thenReturn(true);
+        when(passwordEncoder.encode("Baru123!X")).thenReturn("new-hash");
+
+        authService.changePassword(new ChangePasswordRequest("lama123!A", "Baru123!X"));
+
+        ArgumentCaptor<UserEntity> captor = ArgumentCaptor.forClass(UserEntity.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().getHashedPassword()).isEqualTo("new-hash");
+        verify(refreshTokenRepository).revokeAllByUserId(1);
+    }
+
+    @Test
+    void changePasswordWithWrongOldPasswordThrowsInvalidCredentials() {
+        UserEntity user = user();
+        when(currentUser.username()).thenReturn("admin");
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("salah", "hash")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.changePassword(new ChangePasswordRequest("salah", "Baru123!X")))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(userRepository, never()).save(any());
+        verify(refreshTokenRepository, never()).revokeAllByUserId(any());
+    }
+
+    @Test
+    void changePasswordWithUnknownUserThrowsResourceNotFound() {
+        when(currentUser.username()).thenReturn("ghost");
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.changePassword(new ChangePasswordRequest("lama123!A", "Baru123!X")))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

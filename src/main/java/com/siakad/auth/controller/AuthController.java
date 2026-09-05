@@ -1,5 +1,6 @@
 package com.siakad.auth.controller;
 
+import com.siakad.auth.dto.ChangePasswordRequest;
 import com.siakad.auth.dto.LoginRequest;
 import com.siakad.auth.dto.LoginResponse;
 import com.siakad.auth.dto.RefreshRequest;
@@ -37,5 +38,11 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshRequest request) {
         authService.logout(request.refreshToken());
         return ResponseEntity.ok(ApiResponse.successMessage("Logout berhasil"));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return ResponseEntity.ok(ApiResponse.successMessage("Password berhasil diubah"));
     }
 }

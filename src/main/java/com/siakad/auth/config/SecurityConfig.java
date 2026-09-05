@@ -30,6 +30,8 @@ import java.util.List;
 /**
  * Konfigurasi keamanan stateless JWT:
  * csrf disabled, session stateless, /api/auth &amp; /actuator public, sisanya authenticated.
+ * Pengecualian: /api/auth/change-password tetap membutuhkan autentikasi meski berada di
+ * bawah prefix /api/auth/**.
  */
 @Configuration
 @EnableMethodSecurity
@@ -61,6 +63,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/change-password").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

@@ -1,5 +1,6 @@
 package com.siakad.auth.service;
 
+import com.siakad.auth.dto.ChangePasswordRequest;
 import com.siakad.auth.dto.LoginRequest;
 import com.siakad.auth.dto.LoginResponse;
 import com.siakad.auth.dto.RefreshRequest;
@@ -9,14 +10,17 @@ import com.siakad.auth.entity.RefreshTokenEntity;
 import com.siakad.auth.entity.UserEntity;
 import com.siakad.auth.repository.RefreshTokenRepository;
 import com.siakad.auth.repository.UserRepository;
+import com.siakad.auth.security.CurrentUserContext;
 import com.siakad.auth.security.UserPrincipal;
 import com.siakad.common.exception.InvalidCredentialsException;
 import com.siakad.common.exception.InvalidTokenException;
+import com.siakad.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +35,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final CurrentUserContext currentUser;
 
     public LoginResponse login(LoginRequest request) {
         Authentication authentication;
@@ -83,6 +89,19 @@ public class AuthService {
                     token.setRevoked(true);
                     refreshTokenRepository.save(token);
                 });
+    }
+
+    public void changePassword(ChangePasswordRequest request) {
+        UserEntity user = userRepository.findByUsername(currentUser.username())
+                .orElseThrow(() -> new ResourceNotFoundException("User tidak ditemukan"));
+
+        if (!passwordEncoder.matches(request.oldPassword(), user.getHashedPassword())) {
+            throw new InvalidCredentialsException("Password lama salah");
+        }
+
+        user.setHashedPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+        refreshTokenRepository.revokeAllByUserId(user.getId());
     }
 
     /**

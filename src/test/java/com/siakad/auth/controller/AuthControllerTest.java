@@ -1,5 +1,6 @@
 package com.siakad.auth.controller;
 
+import com.siakad.auth.dto.ChangePasswordRequest;
 import com.siakad.auth.dto.LoginRequest;
 import com.siakad.auth.dto.LoginResponse;
 import com.siakad.auth.dto.RefreshRequest;
@@ -66,5 +67,17 @@ class AuthControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getMessage()).isEqualTo("Logout berhasil");
         verify(authService).logout("some-refresh");
+    }
+
+    @Test
+    void changePasswordReturnsOkEnvelope() {
+        doNothing().when(authService).changePassword(any());
+
+        ResponseEntity<ApiResponse<Void>> response =
+                controller.changePassword(new ChangePasswordRequest("lama123!A", "Baru123!X"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getMessage()).isEqualTo("Password berhasil diubah");
+        verify(authService).changePassword(any());
     }
 }
