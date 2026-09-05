@@ -14,4 +14,6 @@ public interface JenisPembayaranRepository extends JpaRepository<JenisPembayaran
     boolean existsByIdAndJenjang(Integer id, Jenjang jenjang);
 
     Optional<JenisPembayaranEntity> findByJenisAndJenjang(String jenis, Jenjang jenjang);
+
+    Optional<JenisPembayaranEntity> findByIdAndJenjang(Integer id, Jenjang jenjang);
 }

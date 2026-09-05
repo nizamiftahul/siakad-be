@@ -169,6 +169,14 @@ lengkap dengan SPP per siswa.
 - `PUT /api/pembayaran-spp/{id}` — update data pembayaran SPP
 - `DELETE /api/pembayaran-spp/{id}` — hapus pembayaran SPP
 
+### Pembayaran Lainnya (`/api/pembayaran-lainnya`)
+
+- `GET /api/pembayaran-lainnya` — daftar pembayaran lainnya milik satu siswa pada satu periode (dengan pagination, wajib `siswaId` dan `periodeId`)
+- `GET /api/pembayaran-lainnya/{id}` — detail pembayaran lainnya berdasarkan ID
+- `POST /api/pembayaran-lainnya` — buat pembayaran lainnya baru (`jenisPembayaranId` wajib diisi; `jenis` otomatis diambil dari `JenisPembayaran` sesuai `jenisPembayaranId` dan jenjang akun, tidak diinput manual)
+- `PUT /api/pembayaran-lainnya/{id}` — update data pembayaran lainnya
+- `DELETE /api/pembayaran-lainnya/{id}` — hapus pembayaran lainnya
+
 ---
 
 ## Skema Database
@@ -194,6 +202,7 @@ di-restore dari `docker/initdb/01-schema.sql`, yang otomatis dijalankan Postgres
   - `V7__drop_trigger_set_timestamp_on_update.sql` — drop trigger auto-update `updatedAt` (digantikan `@UpdateTimestamp` di layer aplikasi)
   - `V8__add_kelassiswa_siswaid_kelasgrupid_unique.sql` — unique constraint pada `KelasSiswa("siswaId", "kelasGrupId")`
   - `V9__add_deposito_createdat_and_unique_constraint.sql` — kolom `createdAt` pada `Deposito` + unique constraint `("siswaId", "jenisPembayaranId")`
+  - `V10__denormalize_jenis_into_pembayaranlainnyadetail.sql` — kolom `jenis` + `jenisPembayaranId` pada `PembayaranLainnyaDetail` (denormalized dari `PembayaranLainnya`), `pembayaranLainnyaId` jadi nullable
 
 ---
 
