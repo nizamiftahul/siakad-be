@@ -1,6 +1,7 @@
 package com.siakad.pembayaranlainnya.repository;
 
 import com.siakad.common.enums.Jenjang;
+import com.siakad.pembayaranlainnya.dto.PembayaranLainnyaRow;
 import com.siakad.pembayaranlainnya.entity.PembayaranLainnyaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,23 +27,33 @@ public interface PembayaranLainnyaRepository extends JpaRepository<PembayaranLai
     Optional<PembayaranLainnyaEntity> findByIdAndJenjang(@Param("id") Integer id, @Param("jenjang") Jenjang jenjang);
 
     @Query("""
-        SELECT pld FROM PembayaranLainnyaEntity pld
-        WHERE pld.kelasSiswaId IN (
-            SELECT ks.id FROM KelasSiswaEntity ks
-            WHERE ks.siswaId = :siswaId
-              AND ks.kelasGrupId IN (
-                  SELECT kg.id FROM KelasGrupEntity kg WHERE kg.periodeId = :periodeId
-              )
-          )
-          AND pld.kelasSiswaId IN (
-              SELECT ks2.id FROM KelasSiswaEntity ks2
-              WHERE ks2.kelasGrupId IN (
-                  SELECT kg2.id FROM KelasGrupEntity kg2
-                  WHERE kg2.kelasId IN (SELECT k2.id FROM KelasEntity k2 WHERE k2.jenjang = :jenjang)
-              )
-          )
+        SELECT new com.siakad.pembayaranlainnya.dto.PembayaranLainnyaRow(
+            pld, s.id, s.nama, kg.id, kg.nama, p.id, p.nama)
+        FROM PembayaranLainnyaEntity pld
+        JOIN KelasSiswaEntity ks ON ks.id = pld.kelasSiswaId
+        JOIN SiswaEntity s ON s.id = ks.siswaId
+        JOIN KelasGrupEntity kg ON kg.id = ks.kelasGrupId
+        JOIN PeriodeEntity p ON p.id = kg.periodeId
+        JOIN KelasEntity k ON k.id = kg.kelasId
+        WHERE pld.id = :id
+          AND k.jenjang = :jenjang
         """)
-    Page<PembayaranLainnyaEntity> search(@Param("siswaId") Integer siswaId,
+    Optional<PembayaranLainnyaRow> findRowByIdAndJenjang(@Param("id") Integer id, @Param("jenjang") Jenjang jenjang);
+
+    @Query("""
+        SELECT new com.siakad.pembayaranlainnya.dto.PembayaranLainnyaRow(
+            pld, s.id, s.nama, kg.id, kg.nama, p.id, p.nama)
+        FROM PembayaranLainnyaEntity pld
+        JOIN KelasSiswaEntity ks ON ks.id = pld.kelasSiswaId
+        JOIN SiswaEntity s ON s.id = ks.siswaId
+        JOIN KelasGrupEntity kg ON kg.id = ks.kelasGrupId
+        JOIN PeriodeEntity p ON p.id = kg.periodeId
+        JOIN KelasEntity k ON k.id = kg.kelasId
+        WHERE (:siswaId IS NULL OR s.id = :siswaId)
+          AND (:periodeId IS NULL OR p.id = :periodeId)
+          AND k.jenjang = :jenjang
+        """)
+    Page<PembayaranLainnyaRow> searchRows(@Param("siswaId") Integer siswaId,
             @Param("periodeId") Integer periodeId,
             @Param("jenjang") Jenjang jenjang,
             Pageable pageable);

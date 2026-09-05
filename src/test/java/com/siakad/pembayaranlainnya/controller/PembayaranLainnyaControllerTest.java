@@ -35,14 +35,18 @@ class PembayaranLainnyaControllerTest {
     @InjectMocks
     private PembayaranLainnyaController controller;
 
-    private PembayaranLainnyaRequest request(Integer kelasSiswaId, Integer jenisPembayaranId) {
-        return new PembayaranLainnyaRequest(kelasSiswaId, jenisPembayaranId, "Seragam",
+    private PembayaranLainnyaRequest request(Integer siswaId, Integer jenisPembayaranId) {
+        return new PembayaranLainnyaRequest(siswaId, 200, jenisPembayaranId, "Seragam",
                 new BigDecimal("500000.00"), null, null, null);
     }
 
     private PembayaranLainnyaResponse response(Integer id, Integer kelasSiswaId, Integer jenisPembayaranId) {
         return new PembayaranLainnyaResponse(
-                id, kelasSiswaId, jenisPembayaranId, "Seragam", "Seragam",
+                id, kelasSiswaId,
+                1, "Siswa Uji",
+                10, "Kelas Uji",
+                20, "Periode Uji",
+                jenisPembayaranId, "Seragam", "Seragam",
                 new BigDecimal("500000.00"), BigDecimal.ZERO, PembayaranStatus.BelumLunas, null,
                 OffsetDateTime.now(), null, "admin", "admin");
     }

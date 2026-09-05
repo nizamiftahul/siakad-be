@@ -6,9 +6,11 @@ import com.siakad.common.enums.PembayaranStatus;
 import com.siakad.common.exception.ResourceNotFoundException;
 import com.siakad.jenispembayaran.entity.JenisPembayaranEntity;
 import com.siakad.jenispembayaran.repository.JenisPembayaranRepository;
+import com.siakad.kelassiswa.entity.KelasSiswaEntity;
 import com.siakad.kelassiswa.repository.KelasSiswaRepository;
 import com.siakad.pembayaranlainnya.dto.PembayaranLainnyaRequest;
 import com.siakad.pembayaranlainnya.dto.PembayaranLainnyaResponse;
+import com.siakad.pembayaranlainnya.dto.PembayaranLainnyaRow;
 import com.siakad.pembayaranlainnya.entity.PembayaranLainnyaEntity;
 import com.siakad.pembayaranlainnya.repository.PembayaranLainnyaRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,40 +33,44 @@ public class PembayaranLainnyaService {
 
     public PembayaranLainnyaResponse create(PembayaranLainnyaRequest request) {
         Jenjang jenjang = currentUser.jenjang();
-        validateKelasSiswa(request.kelasSiswaId(), jenjang);
+        KelasSiswaEntity kelasSiswa = resolveKelasSiswa(request.siswaId(), request.periodeId(), jenjang);
         JenisPembayaranEntity jenisPembayaran = resolveJenisPembayaran(request.jenisPembayaranId(), jenjang);
 
         String actor = currentUser.username();
         PembayaranLainnyaEntity entity = toEntity(request, new PembayaranLainnyaEntity());
+        entity.setKelasSiswaId(kelasSiswa.getId());
         entity.setJenisPembayaranId(jenisPembayaran.getId());
         entity.setJenis(jenisPembayaran.getJenis());
         entity.setCreatedBy(actor);
         entity.setUpdatedBy(actor);
-        return PembayaranLainnyaResponse.from(pembayaranLainnyaRepository.save(entity));
+        PembayaranLainnyaEntity saved = pembayaranLainnyaRepository.save(entity);
+        return PembayaranLainnyaResponse.from(findRowOrThrow(saved.getId(), jenjang));
     }
 
     @Transactional(readOnly = true)
     public PembayaranLainnyaResponse getById(Integer id) {
-        return PembayaranLainnyaResponse.from(findOrThrow(id));
+        return PembayaranLainnyaResponse.from(findRowOrThrow(id, currentUser.jenjang()));
     }
 
     @Transactional(readOnly = true)
     public Page<PembayaranLainnyaResponse> list(Integer siswaId, Integer periodeId, Pageable pageable) {
-        return pembayaranLainnyaRepository.search(siswaId, periodeId, currentUser.jenjang(), pageable)
+        return pembayaranLainnyaRepository.searchRows(siswaId, periodeId, currentUser.jenjang(), pageable)
                 .map(PembayaranLainnyaResponse::from);
     }
 
     public PembayaranLainnyaResponse update(Integer id, PembayaranLainnyaRequest request) {
         PembayaranLainnyaEntity entity = findOrThrow(id);
         Jenjang jenjang = currentUser.jenjang();
-        validateKelasSiswa(request.kelasSiswaId(), jenjang);
+        KelasSiswaEntity kelasSiswa = resolveKelasSiswa(request.siswaId(), request.periodeId(), jenjang);
         JenisPembayaranEntity jenisPembayaran = resolveJenisPembayaran(request.jenisPembayaranId(), jenjang);
 
         toEntity(request, entity);
+        entity.setKelasSiswaId(kelasSiswa.getId());
         entity.setJenisPembayaranId(jenisPembayaran.getId());
         entity.setJenis(jenisPembayaran.getJenis());
         entity.setUpdatedBy(currentUser.username());
-        return PembayaranLainnyaResponse.from(pembayaranLainnyaRepository.save(entity));
+        PembayaranLainnyaEntity saved = pembayaranLainnyaRepository.save(entity);
+        return PembayaranLainnyaResponse.from(findRowOrThrow(saved.getId(), jenjang));
     }
 
     public void delete(Integer id) {
@@ -76,10 +82,15 @@ public class PembayaranLainnyaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pembayaran lainnya dengan id " + id + " tidak ditemukan"));
     }
 
-    private void validateKelasSiswa(Integer kelasSiswaId, Jenjang jenjang) {
-        if (kelasSiswaRepository.findByIdAndJenjang(kelasSiswaId, jenjang).isEmpty()) {
-            throw new ResourceNotFoundException("Kelas siswa dengan id " + kelasSiswaId + " tidak ditemukan");
-        }
+    private PembayaranLainnyaRow findRowOrThrow(Integer id, Jenjang jenjang) {
+        return pembayaranLainnyaRepository.findRowByIdAndJenjang(id, jenjang)
+                .orElseThrow(() -> new ResourceNotFoundException("Pembayaran lainnya dengan id " + id + " tidak ditemukan"));
+    }
+
+    private KelasSiswaEntity resolveKelasSiswa(Integer siswaId, Integer periodeId, Jenjang jenjang) {
+        return kelasSiswaRepository.findBySiswaIdAndPeriodeIdAndJenjang(siswaId, periodeId, jenjang)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Kelas siswa untuk siswaId " + siswaId + " dan periodeId " + periodeId + " tidak ditemukan"));
     }
 
     private JenisPembayaranEntity resolveJenisPembayaran(Integer jenisPembayaranId, Jenjang jenjang) {
@@ -89,7 +100,6 @@ public class PembayaranLainnyaService {
     }
 
     private PembayaranLainnyaEntity toEntity(PembayaranLainnyaRequest r, PembayaranLainnyaEntity entity) {
-        entity.setKelasSiswaId(r.kelasSiswaId());
         entity.setDescription(r.description());
         entity.setJumlah(r.jumlah());
         entity.setPotongan(r.potongan() != null ? r.potongan() : BigDecimal.ZERO);

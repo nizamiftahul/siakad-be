@@ -171,9 +171,9 @@ lengkap dengan SPP per siswa.
 
 ### Pembayaran Lainnya (`/api/pembayaran-lainnya`)
 
-- `GET /api/pembayaran-lainnya` — daftar pembayaran lainnya milik satu siswa pada satu periode (dengan pagination, wajib `siswaId` dan `periodeId`)
+- `GET /api/pembayaran-lainnya` — daftar pembayaran lainnya (dengan pagination, filter opsional `siswaId`/`periodeId`, dibatasi jenjang dari session); response memuat `namaSiswa`, `namaKelas`, `namaPeriode` beserta masing-masing id-nya (`siswaId`, `kelasGrupId`, `periodeId`)
 - `GET /api/pembayaran-lainnya/{id}` — detail pembayaran lainnya berdasarkan ID
-- `POST /api/pembayaran-lainnya` — buat pembayaran lainnya baru (`jenisPembayaranId` wajib diisi; `jenis` otomatis diambil dari `JenisPembayaran` sesuai `jenisPembayaranId` dan jenjang akun, tidak diinput manual)
+- `POST /api/pembayaran-lainnya` — buat pembayaran lainnya baru; request diisi `siswaId` + `periodeId` (bukan `kelasSiswaId` langsung), lalu di-resolve server-side ke enrollment `KelasSiswa` yang cocok (404 jika tidak ditemukan); `jenisPembayaranId` wajib diisi, `jenis` otomatis diambil dari `JenisPembayaran` sesuai `jenisPembayaranId` dan jenjang akun, tidak diinput manual
 - `PUT /api/pembayaran-lainnya/{id}` — update data pembayaran lainnya
 - `DELETE /api/pembayaran-lainnya/{id}` — hapus pembayaran lainnya
 

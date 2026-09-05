@@ -8,7 +8,8 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 public record PembayaranLainnyaRequest(
-        @NotNull(message = "kelasSiswaId wajib diisi") Integer kelasSiswaId,
+        @NotNull(message = "siswaId wajib diisi") Integer siswaId,
+        @NotNull(message = "periodeId wajib diisi") Integer periodeId,
         @NotNull(message = "jenisPembayaranId wajib diisi") Integer jenisPembayaranId,
         String description,
         @NotNull(message = "jumlah wajib diisi")
