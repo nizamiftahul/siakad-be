@@ -82,7 +82,7 @@ mvn spring-boot:run
 
 ### Autentikasi (`/api/auth`)
 
-- `POST /api/auth/login` — login dengan email dan password, mengembalikan access token & refresh token
+- `POST /api/auth/login` — login dengan email dan password, mengembalikan access token & refresh token (dibatasi 5 percobaan/60 detik per IP, mengembalikan `429 Too Many Requests` jika terlampaui)
 - `POST /api/auth/refresh` — refresh access token menggunakan refresh token
 - `POST /api/auth/logout` — logout dan invalidate refresh token
 - `POST /api/auth/change-password` — ubah password akun sendiri (wajib login/token valid, verifikasi password lama, me-revoke semua refresh token aktif)
