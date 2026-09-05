@@ -46,17 +46,15 @@ class JwtServiceTest {
 
         Claims claims = jwtService.parseAccessToken(token);
         assertThat(claims.getSubject()).isEqualTo("1");
-        assertThat(jwtService.extractUserId(token)).isEqualTo(1);
-        assertThat(jwtService.extractUsername(token)).isEqualTo("admin");
-        assertThat(jwtService.extractRole(token)).isEqualTo("Admin");
-        assertThat(jwtService.extractJenjang(token)).isEqualTo("SMA");
+        assertThat(claims.get("username", String.class)).isEqualTo("admin");
+        assertThat(claims.get("role", String.class)).isEqualTo("Admin");
+        assertThat(claims.get("jenjang", String.class)).isEqualTo("SMA");
     }
 
     @Test
-    void isTokenValidReturnsTrueForWellFormedToken() {
-        String token = jwtService.generateAccessToken(principal());
-        assertThat(jwtService.isTokenValid(token)).isTrue();
-        assertThat(jwtService.isTokenValid("not-a-token")).isFalse();
+    void malformedTokenFailsParsing() {
+        assertThatThrownBy(() -> jwtService.parseAccessToken("not-a-token"))
+                .isInstanceOf(io.jsonwebtoken.MalformedJwtException.class);
     }
 
     @Test
@@ -66,7 +64,6 @@ class JwtServiceTest {
         JwtService shortLived = new JwtService(new JwtProperties(secret, -1000L, 604_800_000L));
         String token = shortLived.generateAccessToken(principal());
 
-        assertThat(shortLived.isTokenValid(token)).isFalse();
         assertThatThrownBy(() -> shortLived.parseAccessToken(token))
                 .isInstanceOf(ExpiredJwtException.class);
     }

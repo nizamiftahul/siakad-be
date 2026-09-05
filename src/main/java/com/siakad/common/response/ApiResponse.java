@@ -51,10 +51,6 @@ public class ApiResponse<T> {
         return new ApiResponse<>(false, message, null, meta, null, errors);
     }
 
-    public static <T> ApiResponse<T> error(String message) {
-        return error(message, null, Meta.now());
-    }
-
     public boolean isSuccess() {
         return success;
     }

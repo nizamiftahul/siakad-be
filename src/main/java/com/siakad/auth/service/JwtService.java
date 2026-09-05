@@ -67,31 +67,6 @@ public class JwtService {
                 .getPayload();
     }
 
-    public String extractUsername(String token) {
-        return parseAccessToken(token).get("username", String.class);
-    }
-
-    public Integer extractUserId(String token) {
-        return Integer.valueOf(parseAccessToken(token).getSubject());
-    }
-
-    public String extractRole(String token) {
-        return parseAccessToken(token).get("role", String.class);
-    }
-
-    public String extractJenjang(String token) {
-        return parseAccessToken(token).get("jenjang", String.class);
-    }
-
-    public boolean isTokenValid(String token) {
-        try {
-            parseAccessToken(token);
-            return true;
-        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
-            return false;
-        }
-    }
-
     /**
      * Waktu kadaluarsa untuk refresh token (berdasarkan konfigurasi).
      */
