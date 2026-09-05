@@ -25,6 +25,19 @@ public interface KelasSiswaRepository extends JpaRepository<KelasSiswaEntity, In
 
     @Query("""
         SELECT ks FROM KelasSiswaEntity ks
+        WHERE ks.siswaId = :siswaId
+          AND ks.kelasGrupId IN (SELECT kg.id FROM KelasGrupEntity kg WHERE kg.periodeId = :periodeId)
+          AND ks.kelasGrupId IN (
+              SELECT kg2.id FROM KelasGrupEntity kg2
+              WHERE kg2.kelasId IN (SELECT k.id FROM KelasEntity k WHERE k.jenjang = :jenjang)
+          )
+        """)
+    Optional<KelasSiswaEntity> findBySiswaIdAndPeriodeIdAndJenjang(@Param("siswaId") Integer siswaId,
+        @Param("periodeId") Integer periodeId,
+        @Param("jenjang") Jenjang jenjang);
+
+    @Query("""
+        SELECT ks FROM KelasSiswaEntity ks
         WHERE (:kelasGrupId IS NULL OR ks.kelasGrupId = :kelasGrupId)
           AND (:siswaId IS NULL OR ks.siswaId = :siswaId)
           AND (:periodeId IS NULL OR ks.kelasGrupId IN (

@@ -1,6 +1,7 @@
 package com.siakad.pembayaranspp.repository;
 
 import com.siakad.common.enums.Jenjang;
+import com.siakad.pembayaranspp.dto.PembayaranSppRow;
 import com.siakad.pembayaranspp.entity.PembayaranSppEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,23 +27,35 @@ public interface PembayaranSppRepository extends JpaRepository<PembayaranSppEnti
     Optional<PembayaranSppEntity> findByIdAndJenjang(@Param("id") Integer id, @Param("jenjang") Jenjang jenjang);
 
     @Query("""
-        SELECT ps FROM PembayaranSppEntity ps
-        WHERE ps.kelasSiswaId IN (
-            SELECT ks.id FROM KelasSiswaEntity ks
-            WHERE ks.siswaId = :siswaId
-              AND ks.kelasGrupId IN (
-                  SELECT kg.id FROM KelasGrupEntity kg WHERE kg.periodeId = :periodeId
-              )
-          )
-          AND ps.kelasSiswaId IN (
-              SELECT ks2.id FROM KelasSiswaEntity ks2
-              WHERE ks2.kelasGrupId IN (
-                  SELECT kg2.id FROM KelasGrupEntity kg2
-                  WHERE kg2.kelasId IN (SELECT k2.id FROM KelasEntity k2 WHERE k2.jenjang = :jenjang)
-              )
-          )
+        SELECT new com.siakad.pembayaranspp.dto.PembayaranSppRow(
+            ps, s.id, s.nama, kg.id, kg.nama, p.id, p.nama, jp.jenis)
+        FROM PembayaranSppEntity ps
+        JOIN KelasSiswaEntity ks ON ks.id = ps.kelasSiswaId
+        JOIN SiswaEntity s ON s.id = ks.siswaId
+        JOIN KelasGrupEntity kg ON kg.id = ks.kelasGrupId
+        JOIN PeriodeEntity p ON p.id = kg.periodeId
+        JOIN KelasEntity k ON k.id = kg.kelasId
+        LEFT JOIN JenisPembayaranEntity jp ON jp.id = ps.jenisPembayaranId
+        WHERE ps.id = :id
+          AND k.jenjang = :jenjang
         """)
-    Page<PembayaranSppEntity> search(@Param("siswaId") Integer siswaId,
+    Optional<PembayaranSppRow> findRowByIdAndJenjang(@Param("id") Integer id, @Param("jenjang") Jenjang jenjang);
+
+    @Query("""
+        SELECT new com.siakad.pembayaranspp.dto.PembayaranSppRow(
+            ps, s.id, s.nama, kg.id, kg.nama, p.id, p.nama, jp.jenis)
+        FROM PembayaranSppEntity ps
+        JOIN KelasSiswaEntity ks ON ks.id = ps.kelasSiswaId
+        JOIN SiswaEntity s ON s.id = ks.siswaId
+        JOIN KelasGrupEntity kg ON kg.id = ks.kelasGrupId
+        JOIN PeriodeEntity p ON p.id = kg.periodeId
+        JOIN KelasEntity k ON k.id = kg.kelasId
+        LEFT JOIN JenisPembayaranEntity jp ON jp.id = ps.jenisPembayaranId
+        WHERE (:siswaId IS NULL OR s.id = :siswaId)
+          AND (:periodeId IS NULL OR p.id = :periodeId)
+          AND k.jenjang = :jenjang
+        """)
+    Page<PembayaranSppRow> searchRows(@Param("siswaId") Integer siswaId,
         @Param("periodeId") Integer periodeId,
         @Param("jenjang") Jenjang jenjang,
         Pageable pageable);

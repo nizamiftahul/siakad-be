@@ -35,14 +35,19 @@ class PembayaranSppControllerTest {
     @InjectMocks
     private PembayaranSppController controller;
 
-    private PembayaranSppRequest request(Integer kelasSiswaId, Integer bulan, Integer tahun) {
-        return new PembayaranSppRequest(kelasSiswaId, null,
+    private PembayaranSppRequest request(Integer siswaId, Integer bulan, Integer tahun) {
+        return new PembayaranSppRequest(siswaId, 200, null,
                 new BigDecimal("150000.00"), null, bulan, tahun, null, null);
     }
 
     private PembayaranSppResponse response(Integer id, Integer kelasSiswaId, Integer bulan, Integer tahun) {
         return new PembayaranSppResponse(
-                id, kelasSiswaId, null, null,
+                id, kelasSiswaId,
+                1, "Siswa Uji",
+                10, "Kelas Uji",
+                20, "Periode Uji",
+                3, "SPP",
+                null,
                 new BigDecimal("150000.00"), BigDecimal.ZERO, bulan, tahun, null,
                 PembayaranStatus.BelumLunas, OffsetDateTime.now(), null, "admin", "admin");
     }
@@ -79,6 +84,17 @@ class PembayaranSppControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getData()).hasSize(1);
         assertThat(response.getBody().getPagination().page()).isEqualTo(1);
+    }
+
+    @Test
+    void listWithoutFiltersReturnsPaginatedEnvelope() {
+        var page = new PageImpl<>(List.of(response(1, 1, 1, 2026)), PageRequest.of(0, 10), 1);
+        when(pembayaranSppService.list(any(), any(), any())).thenReturn(page);
+
+        ResponseEntity<ApiResponse<List<PembayaranSppResponse>>> response = controller.list(null, null, 1, 10);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData()).hasSize(1);
     }
 
     @Test

@@ -9,7 +9,14 @@ import java.time.OffsetDateTime;
 public record PembayaranSppResponse(
         Integer id,
         Integer kelasSiswaId,
+        Integer siswaId,
+        String namaSiswa,
+        Integer kelasGrupId,
+        String namaKelas,
+        Integer periodeId,
+        String namaPeriode,
         Integer jenisPembayaranId,
+        String jenis,
         String description,
         BigDecimal spp,
         BigDecimal potonganSpp,
@@ -22,10 +29,16 @@ public record PembayaranSppResponse(
         String createdBy,
         String updatedBy) {
 
-    public static PembayaranSppResponse from(PembayaranSppEntity e) {
+    public static PembayaranSppResponse from(PembayaranSppRow row) {
+        PembayaranSppEntity e = row.pembayaranSpp();
         return new PembayaranSppResponse(
-                e.getId(), e.getKelasSiswaId(), e.getJenisPembayaranId(), e.getDescription(),
-                e.getSpp(), e.getPotonganSpp(), e.getBulan(), e.getTahun(), e.getTglPembayaran(),
-                e.getStatus(), e.getCreatedAt(), e.getUpdatedAt(), e.getCreatedBy(), e.getUpdatedBy());
+                e.getId(), e.getKelasSiswaId(),
+                row.siswaId(), row.namaSiswa(),
+                row.kelasGrupId(), row.namaKelas(),
+                row.periodeId(), row.namaPeriode(),
+                e.getJenisPembayaranId(), row.jenis(),
+                e.getDescription(), e.getSpp(), e.getPotonganSpp(), e.getBulan(), e.getTahun(),
+                e.getTglPembayaran(), e.getStatus(), e.getCreatedAt(), e.getUpdatedAt(),
+                e.getCreatedBy(), e.getUpdatedBy());
     }
 }

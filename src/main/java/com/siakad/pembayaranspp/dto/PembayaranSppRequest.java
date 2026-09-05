@@ -10,7 +10,8 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 public record PembayaranSppRequest(
-        @NotNull(message = "kelasSiswaId wajib diisi") Integer kelasSiswaId,
+        @NotNull(message = "siswaId wajib diisi") Integer siswaId,
+        @NotNull(message = "periodeId wajib diisi") Integer periodeId,
         String description,
         @NotNull(message = "spp wajib diisi")
         @DecimalMin(value = "0.00", message = "spp tidak boleh negatif") BigDecimal spp,

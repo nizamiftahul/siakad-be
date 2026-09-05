@@ -53,8 +53,8 @@ public class PembayaranSppController {
     @GetMapping
     @PreAuthorize("hasAnyRole('Admin', 'KSatu')")
     public ResponseEntity<ApiResponse<List<PembayaranSppResponse>>> list(
-            @RequestParam Integer siswaId,
-            @RequestParam Integer periodeId,
+            @RequestParam(required = false) Integer siswaId,
+            @RequestParam(required = false) Integer periodeId,
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "page minimal 1") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "size minimal 1") @Max(value = 100, message = "size maksimal 100") int size) {
         Page<PembayaranSppResponse> result = pembayaranSppService.list(siswaId, periodeId,

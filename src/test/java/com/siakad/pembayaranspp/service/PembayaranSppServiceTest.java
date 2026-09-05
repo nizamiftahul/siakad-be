@@ -14,6 +14,7 @@ import com.siakad.kelassiswa.entity.KelasSiswaEntity;
 import com.siakad.kelassiswa.repository.KelasSiswaRepository;
 import com.siakad.pembayaranspp.dto.PembayaranSppRequest;
 import com.siakad.pembayaranspp.dto.PembayaranSppResponse;
+import com.siakad.pembayaranspp.dto.PembayaranSppRow;
 import com.siakad.pembayaranspp.entity.PembayaranSppEntity;
 import com.siakad.pembayaranspp.repository.PembayaranSppRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -36,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,8 +64,8 @@ class PembayaranSppServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    private PembayaranSppRequest request(Integer kelasSiswaId, Integer bulan, Integer tahun) {
-        return new PembayaranSppRequest(kelasSiswaId, null,
+    private PembayaranSppRequest request(Integer siswaId, Integer periodeId, Integer bulan, Integer tahun) {
+        return new PembayaranSppRequest(siswaId, periodeId, null,
                 new BigDecimal("150000.00"), null, bulan, tahun, null, null);
     }
 
@@ -78,6 +80,11 @@ class PembayaranSppServiceTest {
                 .tahun(tahun)
                 .status(PembayaranStatus.BelumLunas)
                 .build();
+    }
+
+    private PembayaranSppRow row(PembayaranSppEntity entity) {
+        return new PembayaranSppRow(entity, entity.getKelasSiswaId(), "Siswa Uji",
+                10, "Kelas Uji", 20, "Periode Uji", "SPP");
     }
 
     private JenisPembayaranEntity jenisPembayaranSpp(Integer id, Jenjang jenjang) {
@@ -105,55 +112,66 @@ class PembayaranSppServiceTest {
     @Test
     void createSavesEntityWithResolvedJenisPembayaranAndAudit() {
         authenticateAs(Jenjang.SD);
-        when(kelasSiswaRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(new KelasSiswaEntity()));
+        when(kelasSiswaRepository.findBySiswaIdAndPeriodeIdAndJenjang(100, 200, Jenjang.SD))
+                .thenReturn(Optional.of(KelasSiswaEntity.builder().id(1).build()));
         when(jenisPembayaranRepository.findByJenisAndJenjang("SPP", Jenjang.SD))
                 .thenReturn(Optional.of(jenisPembayaranSpp(3, Jenjang.SD)));
         when(pembayaranSppRepository.existsByKelasSiswaIdAndBulanAndTahun(1, 1, 2026)).thenReturn(false);
         when(pembayaranSppRepository.save(any(PembayaranSppEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(pembayaranSppRepository.findRowByIdAndJenjang(isNull(), eq(Jenjang.SD)))
+                .thenReturn(Optional.of(row(entity(null, 1, 1, 2026))));
 
-        PembayaranSppResponse response = pembayaranSppService.create(request(1, 1, 2026));
+        PembayaranSppResponse response = pembayaranSppService.create(request(100, 200, 1, 2026));
 
         ArgumentCaptor<PembayaranSppEntity> captor = ArgumentCaptor.forClass(PembayaranSppEntity.class);
         verify(pembayaranSppRepository).save(captor.capture());
         PembayaranSppEntity saved = captor.getValue();
+        assertThat(saved.getKelasSiswaId()).isEqualTo(1);
         assertThat(saved.getJenisPembayaranId()).isEqualTo(3);
         assertThat(saved.getCreatedBy()).isEqualTo("admin");
         assertThat(saved.getUpdatedBy()).isEqualTo("admin");
         assertThat(saved.getStatus()).isEqualTo(PembayaranStatus.BelumLunas);
         assertThat(saved.getPotonganSpp()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.kelasSiswaId()).isEqualTo(1);
+        assertThat(response.namaSiswa()).isEqualTo("Siswa Uji");
+        assertThat(response.namaKelas()).isEqualTo("Kelas Uji");
+        assertThat(response.namaPeriode()).isEqualTo("Periode Uji");
+        assertThat(response.jenis()).isEqualTo("SPP");
     }
 
     @Test
     void createWhenJenisPembayaranSppNotConfiguredThrowsResourceNotFound() {
         authenticateAs(Jenjang.SD);
-        when(kelasSiswaRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(new KelasSiswaEntity()));
+        when(kelasSiswaRepository.findBySiswaIdAndPeriodeIdAndJenjang(100, 200, Jenjang.SD))
+                .thenReturn(Optional.of(KelasSiswaEntity.builder().id(1).build()));
         when(pembayaranSppRepository.existsByKelasSiswaIdAndBulanAndTahun(1, 1, 2026)).thenReturn(false);
         when(jenisPembayaranRepository.findByJenisAndJenjang("SPP", Jenjang.SD)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> pembayaranSppService.create(request(1, 1, 2026)))
+        assertThatThrownBy(() -> pembayaranSppService.create(request(100, 200, 1, 2026)))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Jenis pembayaran SPP");
     }
 
     @Test
-    void createWithUnknownKelasSiswaThrowsResourceNotFound() {
+    void createWithUnknownSiswaOrPeriodeThrowsResourceNotFound() {
         authenticateAs(Jenjang.SD);
-        when(kelasSiswaRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.empty());
+        when(kelasSiswaRepository.findBySiswaIdAndPeriodeIdAndJenjang(100, 200, Jenjang.SD))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> pembayaranSppService.create(request(1, 1, 2026)))
+        assertThatThrownBy(() -> pembayaranSppService.create(request(100, 200, 1, 2026)))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Kelas siswa");
+                .hasMessageContaining("Kelas siswa untuk siswaId");
     }
 
     @Test
     void createWithDuplicateBulanTahunThrowsDuplicateResource() {
         authenticateAs(Jenjang.SD);
-        when(kelasSiswaRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(new KelasSiswaEntity()));
+        when(kelasSiswaRepository.findBySiswaIdAndPeriodeIdAndJenjang(100, 200, Jenjang.SD))
+                .thenReturn(Optional.of(KelasSiswaEntity.builder().id(1).build()));
         when(pembayaranSppRepository.existsByKelasSiswaIdAndBulanAndTahun(1, 1, 2026)).thenReturn(true);
 
-        assertThatThrownBy(() -> pembayaranSppService.create(request(1, 1, 2026)))
+        assertThatThrownBy(() -> pembayaranSppService.create(request(100, 200, 1, 2026)))
                 .isInstanceOf(DuplicateResourceException.class)
                 .hasMessageContaining("sudah ada");
     }
@@ -161,29 +179,30 @@ class PembayaranSppServiceTest {
     @Test
     void getByIdReturnsMappedResponse() {
         authenticateAs(Jenjang.SD);
-        when(pembayaranSppRepository.findByIdAndJenjang(1, Jenjang.SD))
-                .thenReturn(Optional.of(entity(1, 1, 1, 2026)));
+        when(pembayaranSppRepository.findRowByIdAndJenjang(1, Jenjang.SD))
+                .thenReturn(Optional.of(row(entity(1, 1, 1, 2026))));
 
         PembayaranSppResponse response = pembayaranSppService.getById(1);
 
         assertThat(response.id()).isEqualTo(1);
         assertThat(response.kelasSiswaId()).isEqualTo(1);
+        assertThat(response.namaSiswa()).isEqualTo("Siswa Uji");
     }
 
     @Test
     void getByIdWithUnknownIdThrowsResourceNotFound() {
         authenticateAs(Jenjang.SD);
-        when(pembayaranSppRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
+        when(pembayaranSppRepository.findRowByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pembayaranSppService.getById(99))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
-    void listDelegatesToRepositorySearchWithMandatoryParams() {
+    void listDelegatesToRepositorySearchWithGivenParams() {
         authenticateAs(Jenjang.SD);
-        var page = new PageImpl<>(List.of(entity(1, 1, 1, 2026)), PageRequest.of(0, 10), 1);
-        when(pembayaranSppRepository.search(eq(10), eq(20), eq(Jenjang.SD), any())).thenReturn(page);
+        var page = new PageImpl<>(List.of(row(entity(1, 1, 1, 2026))), PageRequest.of(0, 10), 1);
+        when(pembayaranSppRepository.searchRows(eq(10), eq(20), eq(Jenjang.SD), any())).thenReturn(page);
 
         var result = pembayaranSppService.list(10, 20, PageRequest.of(0, 10));
 
@@ -192,21 +211,35 @@ class PembayaranSppServiceTest {
     }
 
     @Test
+    void listWithoutFiltersPassesNullThrough() {
+        authenticateAs(Jenjang.SD);
+        var page = new PageImpl<>(List.of(row(entity(1, 1, 1, 2026))), PageRequest.of(0, 10), 1);
+        when(pembayaranSppRepository.searchRows(isNull(), isNull(), eq(Jenjang.SD), any())).thenReturn(page);
+
+        var result = pembayaranSppService.list(null, null, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
     void updateAppliesRequestFieldsAndAudit() {
         authenticateAs(Jenjang.SD);
         PembayaranSppEntity existing = entity(1, 1, 1, 2026);
         when(pembayaranSppRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(kelasSiswaRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(new KelasSiswaEntity()));
+        when(kelasSiswaRepository.findBySiswaIdAndPeriodeIdAndJenjang(100, 200, Jenjang.SD))
+                .thenReturn(Optional.of(KelasSiswaEntity.builder().id(1).build()));
         when(jenisPembayaranRepository.findByJenisAndJenjang("SPP", Jenjang.SD))
                 .thenReturn(Optional.of(jenisPembayaranSpp(3, Jenjang.SD)));
         when(pembayaranSppRepository.existsByKelasSiswaIdAndBulanAndTahunAndIdNot(1, 2, 2026, 1)).thenReturn(false);
         when(pembayaranSppRepository.save(any(PembayaranSppEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(pembayaranSppRepository.findRowByIdAndJenjang(1, Jenjang.SD))
+                .thenReturn(Optional.of(row(entity(1, 1, 2, 2026))));
 
-        PembayaranSppResponse response = pembayaranSppService.update(1, request(1, 2, 2026));
+        PembayaranSppResponse response = pembayaranSppService.update(1, request(100, 200, 2, 2026));
 
-        assertThat(response.bulan()).isEqualTo(2);
-        assertThat(response.updatedBy()).isEqualTo("admin");
+        assertThat(response.kelasSiswaId()).isEqualTo(1);
+        assertThat(response.namaSiswa()).isEqualTo("Siswa Uji");
     }
 
     @Test
@@ -214,10 +247,11 @@ class PembayaranSppServiceTest {
         authenticateAs(Jenjang.SD);
         PembayaranSppEntity existing = entity(1, 1, 1, 2026);
         when(pembayaranSppRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(existing));
-        when(kelasSiswaRepository.findByIdAndJenjang(1, Jenjang.SD)).thenReturn(Optional.of(new KelasSiswaEntity()));
+        when(kelasSiswaRepository.findBySiswaIdAndPeriodeIdAndJenjang(100, 200, Jenjang.SD))
+                .thenReturn(Optional.of(KelasSiswaEntity.builder().id(1).build()));
         when(pembayaranSppRepository.existsByKelasSiswaIdAndBulanAndTahunAndIdNot(1, 1, 2026, 1)).thenReturn(true);
 
-        assertThatThrownBy(() -> pembayaranSppService.update(1, request(1, 1, 2026)))
+        assertThatThrownBy(() -> pembayaranSppService.update(1, request(100, 200, 1, 2026)))
                 .isInstanceOf(DuplicateResourceException.class);
     }
 
@@ -226,7 +260,7 @@ class PembayaranSppServiceTest {
         authenticateAs(Jenjang.SD);
         when(pembayaranSppRepository.findByIdAndJenjang(99, Jenjang.SD)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> pembayaranSppService.update(99, request(1, 1, 2026)))
+        assertThatThrownBy(() -> pembayaranSppService.update(99, request(100, 200, 1, 2026)))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 

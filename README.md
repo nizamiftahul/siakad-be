@@ -163,9 +163,9 @@ lengkap dengan SPP per siswa.
 
 ### Pembayaran SPP (`/api/pembayaran-spp`)
 
-- `GET /api/pembayaran-spp` — daftar pembayaran SPP milik satu siswa pada satu periode (dengan pagination, wajib `siswaId` dan `periodeId`)
+- `GET /api/pembayaran-spp` — daftar pembayaran SPP (dengan pagination, filter opsional `siswaId`/`periodeId`, dibatasi jenjang dari session); response memuat `namaSiswa`, `namaKelas`, `namaPeriode`, dan `jenis` (nama jenis pembayaran) beserta masing-masing id-nya (`siswaId`, `kelasGrupId`, `periodeId`)
 - `GET /api/pembayaran-spp/{id}` — detail pembayaran SPP berdasarkan ID
-- `POST /api/pembayaran-spp` — buat pembayaran SPP baru (keunikan `kelasSiswaId` + `bulan` + `tahun`; `jenisPembayaranId` otomatis diambil dari `JenisPembayaran` dengan `jenis = 'SPP'` sesuai jenjang akun, tidak diinput manual)
+- `POST /api/pembayaran-spp` — buat pembayaran SPP baru; request diisi `siswaId` + `periodeId` (bukan `kelasSiswaId` langsung), lalu di-resolve server-side ke enrollment `KelasSiswa` yang cocok (404 jika tidak ditemukan); keunikan `kelasSiswaId` (hasil resolve) + `bulan` + `tahun`; `jenisPembayaranId` otomatis diambil dari `JenisPembayaran` dengan `jenis = 'SPP'` sesuai jenjang akun, tidak diinput manual
 - `PUT /api/pembayaran-spp/{id}` — update data pembayaran SPP
 - `DELETE /api/pembayaran-spp/{id}` — hapus pembayaran SPP
 
