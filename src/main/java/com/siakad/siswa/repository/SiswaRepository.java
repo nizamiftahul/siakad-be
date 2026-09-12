@@ -19,7 +19,8 @@ public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
       SELECT new com.siakad.siswa.dto.SiswaSearchRow(s, kg.nama)
       FROM SiswaEntity s
       LEFT JOIN KelasSiswaEntity ks ON ks.siswaId = s.id
-      LEFT JOIN KelasGrupEntity kg ON kg.id = ks.kelasGrupId AND kg.periodeId = :periodeId
+      LEFT JOIN KelasGrupEntity kg ON kg.id = ks.kelasGrupId
+      LEFT JOIN PeriodeEntity p ON p.id = kg.periodeId AND p.status = true AND p.jenjang = s.jenjang
       WHERE (:nama IS NULL OR LOWER(s.nama) LIKE LOWER(CONCAT('%', CAST(:nama AS string), '%')))
         AND (:nis IS NULL OR s.nis = :nis)
         AND (CAST(:status AS string) IS NULL OR s.status = :status)
@@ -30,7 +31,6 @@ public interface SiswaRepository extends JpaRepository<SiswaEntity, Integer> {
       @Param("nis") String nis,
       @Param("status") SiswaStatus status,
       @Param("jenjang") Jenjang jenjang,
-      @Param("periodeId") Integer periodeId,
       Pageable pageable);
 
   boolean existsByNisAndJenjang(String nis, Jenjang jenjang);

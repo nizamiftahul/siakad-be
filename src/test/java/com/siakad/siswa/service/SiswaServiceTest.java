@@ -13,8 +13,6 @@ import com.siakad.siswa.dto.SiswaResponse;
 import com.siakad.siswa.dto.SiswaSearchRow;
 import com.siakad.siswa.entity.SiswaEntity;
 import com.siakad.siswa.repository.SiswaRepository;
-import com.siakad.periode.entity.PeriodeEntity;
-import com.siakad.periode.repository.PeriodeRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,14 +41,11 @@ class SiswaServiceTest {
     @Mock
     private SiswaRepository siswaRepository;
 
-    @Mock
-    private PeriodeRepository periodeRepository;
-
     private SiswaService siswaService;
 
     @BeforeEach
     void setUp() {
-        siswaService = new SiswaService(siswaRepository, periodeRepository, new CurrentUserContext());
+        siswaService = new SiswaService(siswaRepository, new CurrentUserContext());
     }
 
     @AfterEach
@@ -157,12 +152,10 @@ class SiswaServiceTest {
     @Test
     void listDelegatesToRepositorySearch() {
         authenticateAs(Jenjang.SD);
-        PeriodeEntity periode = PeriodeEntity.builder().id(7).jenjang(Jenjang.SD).status(true).build();
-        when(periodeRepository.findByJenjangAndStatusTrue(Jenjang.SD)).thenReturn(List.of(periode));
         var page = new PageImpl<>(
                 List.of(new SiswaSearchRow(entity(1, "NIS001", Jenjang.SD), "Kelas 1A")),
                 PageRequest.of(0, 10), 1);
-        when(siswaRepository.search(eq("Budi"), eq(null), eq(SiswaStatus.Aktif), eq(Jenjang.SD), eq(7), any()))
+        when(siswaRepository.search(eq("Budi"), eq(null), eq(SiswaStatus.Aktif), eq(Jenjang.SD), any()))
                 .thenReturn(page);
 
         var result = siswaService.list("Budi", null, SiswaStatus.Aktif, PageRequest.of(0, 10));

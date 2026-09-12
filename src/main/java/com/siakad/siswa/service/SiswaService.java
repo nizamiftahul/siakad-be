@@ -10,8 +10,6 @@ import com.siakad.siswa.dto.SiswaRequest;
 import com.siakad.siswa.dto.SiswaResponse;
 import com.siakad.siswa.entity.SiswaEntity;
 import com.siakad.siswa.repository.SiswaRepository;
-import com.siakad.periode.entity.PeriodeEntity;
-import com.siakad.periode.repository.PeriodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +24,6 @@ import java.util.List;
 public class SiswaService {
 
     private final SiswaRepository siswaRepository;
-    private final PeriodeRepository periodeRepository;
     private final CurrentUserContext currentUser;
 
     public SiswaResponse create(SiswaRequest request) {
@@ -50,11 +47,7 @@ public class SiswaService {
 
     @Transactional(readOnly = true)
     public Page<SiswaResponse> list(String nama, String nis, SiswaStatus status, Pageable pageable) {
-        Integer periodeId = periodeRepository.findByJenjangAndStatusTrue(currentUser.jenjang()).stream()
-                .findFirst()
-                .map(PeriodeEntity::getId)
-                .orElse(null);
-        return siswaRepository.search(nama, nis, status, currentUser.jenjang(), periodeId, pageable)
+        return siswaRepository.search(nama, nis, status, currentUser.jenjang(), pageable)
                 .map(row -> SiswaResponse.from(row.siswa(), row.namaKelas()));
     }
 
